@@ -1,12 +1,20 @@
+//Imports
 const chalk = require("chalk")
 const keypress = require("keypress")
+
+//variable declaration
 var map = [[".",".",".",".",".",".",".",".",".","."],
 [".",".",".",".",".",".",".",".",".","."],
 [".",".",".",".",".",".",".",".",".","."],
 [".",".",".",".",".",".",".",".",".","."],
 [".",".",".",".",".",".",".",".",".","."]
 ]
+let coords = [0,0]
 
+/**
+ * Prints an icon to the map
+ * @params icon to draw, color of icon, position of icon
+ */
 printIcon = (icon, color, x, y) =>{
     console.clear()
     map[x][y] = color(icon)
@@ -18,11 +26,11 @@ printIcon = (icon, color, x, y) =>{
         console.log(string)
     }
 }
-let coords = [0,0]
 
 printIcon("@", chalk.yellow, coords[0], coords[1])
 
 
+//Key listeners and coordinate updates based on the movement.
 keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
