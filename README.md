@@ -1,2 +1,2 @@
 # legendary-goggles
-a text adventure game
+A text adventure game
