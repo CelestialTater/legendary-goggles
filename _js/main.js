@@ -28,18 +28,23 @@ let coords = [0,0]
  */
 printIcon = (icon, color, bg, x, y, initColor = chalk.green) =>{
     console.clear()
-    map[x][y] = color(icon)
     map[x][y] = bg(icon)
+    map[x][y] = color(map[x][y])
     for(i of map){
         var string = "";
         for(o of i){
+            if(o == "@"){
+                o = color(o)
+            }else{
+                o = initColor(o)
+            }
             string += o
         }
         string = chalk.bgGreen(string)
         string = initColor(string)
         console.log(string)
     }
-}
+}  
 
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 
@@ -55,6 +60,13 @@ process.stdin.on('keypress', function (ch, key) {
             if(coords[0] == 0){
                 console.log("hit")
                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
+            }else if(coords[1] == map[0].length){
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
             }else{
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -72,6 +84,13 @@ process.stdin.on('keypress', function (ch, key) {
             printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[0]++
             if(coords[0] == map.length - 1){
+                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+            }else if(coords[1] == map[0].length - 1){
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
             }else{
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
@@ -119,6 +138,7 @@ process.stdin.on('keypress', function (ch, key) {
 
     }else if(key.name == "right"){
         if(coords[1] != map[0].length - 1){
+            
             printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[1]++
             if(coords[0] == map.length - 1){   
@@ -137,7 +157,11 @@ process.stdin.on('keypress', function (ch, key) {
                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 
             }else if(coords[1] == map[0].length - 1){
-                //TODO: Stop infinite map expansion.
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
             }else{
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
