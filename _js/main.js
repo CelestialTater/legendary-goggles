@@ -60,7 +60,7 @@ process.stdin.on('keypress', function (ch, key) {
             if(coords[0] == 0){
                 console.log("hit")
                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
-            }else if(coords[1] == map[0].length){
+            }else if(coords[1] == map[0].length - 1){
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
@@ -141,7 +141,20 @@ process.stdin.on('keypress', function (ch, key) {
             
             printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[1]++
-            if(coords[0] == map.length - 1){   
+            if(coords[1] == map[0].length - 1){
+                if(coords[0] == 0){
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                }else if(coords[0] == map.length - 1){
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                }else{
+                    printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
+                    printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                }
+            }else if(coords[0] == map.length - 1){  
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
@@ -153,14 +166,6 @@ process.stdin.on('keypress', function (ch, key) {
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-
-            }else if(coords[1] == map[0].length - 1){
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
             }else{
