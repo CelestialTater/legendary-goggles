@@ -28,11 +28,14 @@ var run = true;
  * @params icon to draw, color of icon, position of icon
  */
 printIcon = (icon, color, bg, x, y) =>{
-    console.clear()
     map[x][y] = bg(icon)
     map[x][y] = color(map[x][y])
 }  
+/**
+ * Draws the map on the console. Should be ran after printing icons.
+ */
 drawMap = () =>{
+    console.clear()
     for(i of map){
         var string = ""
         for(o of i){
@@ -55,6 +58,7 @@ keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
     if (key.name == "up") {
+        //checks current location, and reveals appropriate tiles.
         if(coords[0] != 0){
             printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[0]--
@@ -84,6 +88,7 @@ process.stdin.on('keypress', function (ch, key) {
             }
         }
     }else if(key.name == "down"){
+        //checks current location, and reveals appropriate tiles.
         if(coords[0] != map.length - 1){
             printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[0]++
@@ -113,6 +118,7 @@ process.stdin.on('keypress', function (ch, key) {
             
         }
     }else if(key.name == "left"){
+        //checks current location, and reveals appropriate tiles.
         if(coords[1] != 0){
             printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[1]--
@@ -146,8 +152,8 @@ process.stdin.on('keypress', function (ch, key) {
         }
 
     }else if(key.name == "right"){
+        //checks current location, and reveals appropriate tiles.
         if(coords[1] != map[0].length - 1){
-            
             printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[1]++
             if(coords[1] == map[0].length - 1){
@@ -196,11 +202,12 @@ process.stdin.on('keypress', function (ch, key) {
             }
         }
     }
-
+    //stops game.
     if (key && key.ctrl && key.name == 'c') {
         process.stdin.pause();
         run = false;
     }
+    //stops taking input for half a second, then re-enables input. This limits input speed.
     process.stdin.pause()
     sleep(500).then(() => {
         if(run){
