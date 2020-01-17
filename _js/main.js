@@ -46,7 +46,11 @@ drawMap = () =>{
         console.log(string)
     }
 }
-function sleep (time) {
+/**
+ * Sleep function
+ * @params time in milliseconds
+ */
+sleep = (time) =>{
     return new Promise((resolve) => setTimeout(resolve, time));
 }
 
@@ -60,7 +64,6 @@ process.stdin.on('keypress', function (ch, key) {
     if (key.name == "up") {
         //checks current location, and reveals appropriate tiles.
         if(coords[0] != 0){
-            printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[0]--
             if(coords[0] == 0){
                 console.log("hit")
@@ -90,7 +93,6 @@ process.stdin.on('keypress', function (ch, key) {
     }else if(key.name == "down"){
         //checks current location, and reveals appropriate tiles.
         if(coords[0] != map.length - 1){
-            printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[0]++
             if(coords[0] == map.length - 1){
                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
@@ -120,7 +122,6 @@ process.stdin.on('keypress', function (ch, key) {
     }else if(key.name == "left"){
         //checks current location, and reveals appropriate tiles.
         if(coords[1] != 0){
-            printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[1]--
             if(coords[0] == 0){
                 printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
@@ -154,7 +155,6 @@ process.stdin.on('keypress', function (ch, key) {
     }else if(key.name == "right"){
         //checks current location, and reveals appropriate tiles.
         if(coords[1] != map[0].length - 1){
-            printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
             coords[1]++
             if(coords[1] == map[0].length - 1){
                 if(coords[0] == 0){
@@ -209,7 +209,7 @@ process.stdin.on('keypress', function (ch, key) {
     }
     //stops taking input for half a second, then re-enables input. This limits input speed.
     process.stdin.pause()
-    sleep(500).then(() => {
+    sleep(250).then(() => {
         if(run){
             process.stdin.resume()
         } 
