@@ -3,23 +3,22 @@ const chalk = require("chalk")
 const keypress = require("keypress")
 
 //variable declaration
-var map = [
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."],
-[".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".",".","."]
-]
+var map = [];
+
+//creates map with random events in random positions
+for(var arr = 0; arr < 15; arr++){
+    var str = []
+    for(var chr = 0; chr < 20; chr++){
+        let randInt = Math.floor(Math.random() * 10);
+        if(randInt === 5){
+            str.push("8")
+        }else{
+            str.push(".")
+        }
+    }
+    map.push(str);
+}
+
 let coords = [0,0]
 var run = true;
 
@@ -54,6 +53,157 @@ sleep = (time) =>{
     return new Promise((resolve) => setTimeout(resolve, time));
 }
 
+revealMap = (direction) =>{
+    switch(direction){
+        case "up":
+            if(coords[0] != 0){
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
+                coords[0]--
+                if(coords[0] == 0){
+                    console.log("hit")
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
+                    drawMap()
+                }else if(coords[1] == map[0].length - 1){
+                    printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()
+                }else{
+                    printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
+                    printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
+                    printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()
+                }
+            }
+            break;
+        case "down":
+            if(coords[0] != map.length - 1){
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
+                coords[0]++
+                if(coords[0] == map.length - 1){
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()
+                }else if(coords[1] == map[0].length - 1){
+                    printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()
+                }else{
+                    printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
+                    printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
+                    printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()
+                }
+                
+            }
+            break;
+        case "left":
+            if(coords[1] != 0){
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
+                coords[1]--
+                if(coords[0] == 0){
+                    printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 2], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
+                    drawMap()
+                }else if(coords[0] == map.length - 1){
+                    printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
+                    printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
+                    drawMap()
+                }else{
+                    printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
+                    printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
+                    printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()
+                }
+            }
+            break;
+        case "right":
+            if(coords[1] != map[0].length - 1){
+                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
+                coords[1]++
+                if(coords[1] == map[0].length - 1){
+                    if(coords[0] == 0){
+                        printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                        drawMap()
+                    }else if(coords[0] == map.length - 1){
+                        printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                        drawMap()
+                    }else{
+                        printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                        printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
+                        printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                        printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                        printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                        printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                        drawMap()
+                    }
+                }else if(coords[0] == map.length - 1){  
+                    printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
+                    printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()  
+                }else if(coords[0] == 0){
+                    printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()
+                }else{
+                    printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
+                    printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
+                    printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
+                    printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
+                    printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
+                    printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    drawMap()
+                }
+            }
+            break;
+        default:
+            console.log("Error: revealMap invalid input");
+            break;
+    }
+}
+
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 drawMap()
 
@@ -63,148 +213,17 @@ process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
     if (key.name == "up") {
         //checks current location, and reveals appropriate tiles.
-        if(coords[0] != 0){
-            printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
-            coords[0]--
-            if(coords[0] == 0){
-                console.log("hit")
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
-                drawMap()
-            }else if(coords[1] == map[0].length - 1){
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()
-            }else{
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()
-            }
-        }
+        revealMap("up");
     }else if(key.name == "down"){
         //checks current location, and reveals appropriate tiles.
-        if(coords[0] != map.length - 1){
-            printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
-            coords[0]++
-            if(coords[0] == map.length - 1){
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()
-            }else if(coords[1] == map[0].length - 1){
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()
-            }else{
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()
-            }
-            
-        }
+        revealMap("down");
     }else if(key.name == "left"){
         //checks current location, and reveals appropriate tiles.
-        if(coords[1] != 0){
-            printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
-            coords[1]--
-            if(coords[0] == 0){
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
-                drawMap()
-            }else if(coords[0] == map.length - 1){
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
-                drawMap()
-            }else{
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()
-            }
-        }
+        revealMap("left")
 
     }else if(key.name == "right"){
         //checks current location, and reveals appropriate tiles.
-        if(coords[1] != map[0].length - 1){
-            printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
-            coords[1]++
-            if(coords[1] == map[0].length - 1){
-                if(coords[0] == 0){
-                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                    drawMap()
-                }else if(coords[0] == map.length - 1){
-                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                    drawMap()
-                }else{
-                    printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                    printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
-                    printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                    printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                    printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                    drawMap()
-                }
-            }else if(coords[0] == map.length - 1){  
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()  
-            }else if(coords[0] == 0){
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()
-            }else{
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
-                printIcon(".", chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                drawMap()
-            }
-        }
+        revealMap("right")
     }
     //stops game.
     if (key && key.ctrl && key.name == 'c') {
