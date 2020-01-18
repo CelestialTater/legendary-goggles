@@ -4,22 +4,6 @@ const keypress = require("keypress")
 
 //variable declaration
 var map = [];
-
-//creates map with random events in random positions
-for(var arr = 0; arr < 15; arr++){
-    var str = []
-    for(var chr = 0; chr < 20; chr++){
-        let randInt = Math.floor(Math.random() * 10);
-        if(randInt === 5){
-            str.push("8")
-        }else{
-            str.push(".")
-        }
-    }
-    map.push(str);
-}
-
-let coords = [0,0]
 var run = true;
 
 /**
@@ -51,6 +35,31 @@ drawMap = () =>{
  */
 sleep = (time) =>{
     return new Promise((resolve) => setTimeout(resolve, time));
+}
+/**
+ * Generates a map with events in random positions
+ * @params floor (currently no use, will affect generation in future). defaults to 1
+ */
+generateMap = (floor = 1) =>{
+    //TODO: Add floors and differences between floors
+    switch(floor){
+        case 1:
+            for(var arr = 0; arr < 15; arr++){
+                var str = []
+                for(var chr = 0; chr < 20; chr++){
+                    let randInt = Math.floor(Math.random() * 20);
+                    if(randInt === 5){
+                        str.push("8")
+                    }else{
+                        str.push(".")
+                    }
+                }
+                map.push(str);
+            }
+            break;
+        default:
+            console.log("Error: generateMap invalid input")
+    }
 }
 
 /**
@@ -208,6 +217,10 @@ revealMap = (direction) =>{
     }
 }
 
+generateMap()
+let randomY = Math.floor(Math.random() * map.length - 1)
+let randomX = Math.floor(Math.random() * map[0].length - 1)
+let coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 drawMap()
 
