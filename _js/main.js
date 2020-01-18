@@ -53,6 +53,10 @@ sleep = (time) =>{
     return new Promise((resolve) => setTimeout(resolve, time));
 }
 
+/**
+ * Reveals appropriate map tiles
+ * @params direction of movement
+ */
 revealMap = (direction) =>{
     switch(direction){
         case "up":
