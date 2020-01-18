@@ -228,20 +228,7 @@ drawMap()
 keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
-    if (key.name == "up") {
-        //checks current location, and reveals appropriate tiles.
-        revealMap("up");
-    }else if(key.name == "down"){
-        //checks current location, and reveals appropriate tiles.
-        revealMap("down");
-    }else if(key.name == "left"){
-        //checks current location, and reveals appropriate tiles.
-        revealMap("left")
-
-    }else if(key.name == "right"){
-        //checks current location, and reveals appropriate tiles.
-        revealMap("right")
-    }
+    revealMap(key.name)
     //stops game.
     if (key && key.ctrl && key.name == 'c') {
         process.stdin.pause();
