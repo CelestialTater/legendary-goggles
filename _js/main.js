@@ -10,9 +10,9 @@ var run = true;
  * Prints an icon to the map
  * @params icon to draw, color of icon, position of icon
  */
-printIcon = (icon, color, bg, x, y) =>{
-    map[x][y] = bg(icon)
-    map[x][y] = color(map[x][y])
+printIcon = (icon, color, bg, y, x) =>{
+    map[y][x] = bg(icon)
+    map[y][x] = color(map[y][x])
 }  
 /**
  * Draws the map on the console. Should be ran after printing icons.
@@ -137,7 +137,7 @@ revealMap = (direction) =>{
                     printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
                     printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                     printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
-                    printIcon(map[coords[0] + 1][coords[1] - 2], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
+                    printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                     printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
                     drawMap()
                 }else if(coords[0] == map.length - 1){
@@ -249,7 +249,7 @@ process.stdin.on('keypress', function (ch, key) {
     }
     //stops taking input for half a second, then re-enables input. This limits input speed.
     process.stdin.pause()
-    sleep(250).then(() => {
+    sleep(100).then(() => {
         if(run){
             process.stdin.resume()
         } 
