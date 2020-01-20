@@ -6,13 +6,22 @@ const keypress = require("keypress")
 var map = [];
 var run = true;
 
+//array to hold special characters. store the special character, then the desired color at the index after
+var specialChars = ["8", chalk.blueBright]
+
 /**
  * Prints an icon to the map
  * @params icon to draw, color of icon, position of icon
  */
 printIcon = (icon, color, bg, y, x) =>{
-    map[y][x] = bg(icon)
-    map[y][x] = color(map[y][x])
+    if(specialChars.includes(icon)){
+        map[y][x] = bg(icon)
+        map[y][x] = specialChars[specialChars.indexOf(icon) + 1](map[y][x])
+    }else{
+        map[y][x] = bg(icon)
+        map[y][x] = color(map[y][x])
+    }
+
 }  
 /**
  * Draws the map on the console. Should be ran after printing icons.
@@ -28,10 +37,11 @@ drawMap = () =>{
         string = chalk.green(string)
         console.log(string)
     }
+    console.log(coords[1] + "," + coords[0])
 }
 /**
  * Sleep function
- * @params time in milliseconds
+ * @params time in millisecondcs
  */
 sleep = (time) =>{
     return new Promise((resolve) => setTimeout(resolve, time));
@@ -111,7 +121,7 @@ revealMap = (direction) =>{
                     printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                     printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                     printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1]) 
                     drawMap()
                 }else{
                     printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
@@ -138,14 +148,14 @@ revealMap = (direction) =>{
                     printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                     printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
                     printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])   
                     drawMap()
                 }else if(coords[0] == map.length - 1){
                     printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
                     printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
                     printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                     printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
-                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
+                    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
                     drawMap()
                 }else{
                     printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
@@ -178,16 +188,17 @@ revealMap = (direction) =>{
                         printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                         printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                         printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
-                        printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                        printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1]) 
                         drawMap()
                     }
-                }else if(coords[0] == map.length - 1){  
+                }else if(coords[0] == map.length - 1){ 
                     printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
                     printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
                     printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                     printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                     printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                     printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+                     
                     drawMap()  
                 }else if(coords[0] == 0){
                     printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
@@ -212,7 +223,7 @@ revealMap = (direction) =>{
             }
             break;
         default:
-            console.log("Error: revealMap invalid input");
+            console.log(chalk.magentaBright("Use the arrow keys to move!"));
             break;
     }
 }
@@ -234,7 +245,7 @@ process.stdin.on('keypress', function (ch, key) {
         process.stdin.pause();
         run = false;
     }
-    //stops taking input for half a second, then re-enables input. This limits input speed.
+    //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
     process.stdin.pause()
     sleep(100).then(() => {
         if(run){
