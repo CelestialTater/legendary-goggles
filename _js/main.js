@@ -27,7 +27,7 @@ printIcon = (icon, color, bg, y, x) =>{
  * Draws the map on the console. Should be ran after printing icons.
  */
 drawMap = () =>{
-    //console.clear()
+    console.clear()
     for(i of map){
         var string = ""
         for(o of i){
@@ -60,17 +60,20 @@ generateMap = (floor = 1) =>{
             for(var arr = 0; arr < 15; arr++){
                 var str = []
                 for(var chr = 0; chr < 20; chr++){
-                    let randInt = Math.floor(Math.random() * 20);
-                    if(randInt === 5){
-                        str.push("8")
-                        eventLocations.push(arr + ", " + chr)
-                    }else{
-                        str.push(".")
-                    }
+                    str.push(".")
                 }
                 map.push(str);
-
-
+            }
+            for(var scc = 0; scc < 10; scc++){
+                let randY = Math.floor(Math.random() * 15)
+                let randX = Math.floor(Math.random() * 20)
+                if (map[randY][randX] == "8"){
+                    scc--;
+                }else{
+                    map[randY][randX] = "8"
+                    eventLocations.push(randY + ", " + randX) 
+                }
+               
             }
             break;
         default:
@@ -90,7 +93,6 @@ revealMap = (direction) =>{
                     printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
                     coords[0]--
                     if(coords[0] == 0){
-                        console.log("hit")
                         printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
                         drawMap()
                     }else if(coords[1] == map[0].length - 1){
@@ -184,7 +186,6 @@ revealMap = (direction) =>{
             }
             break;
         case "right":
-            console.log(coords[0] + ", " + coords[1] + 1)
             if (!eventLocations.includes(coords[0] + ", " + (coords[1] + 1))) {
                 if(coords[1] != map[0].length - 1){
                     printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
