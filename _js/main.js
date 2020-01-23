@@ -6,12 +6,15 @@ const keypress = require("keypress")
 var map = [];
 var battleMap = [];
 var run = true;
+var lastDirection = "";
 var battling = false;
 var battleEnding = false;
 var enemyStarted = false;
 var maxEnemyHealth = 5;
 var enemyHealth = maxEnemyHealth;
 var currentEnemy = "8";
+var enemyY = 0;
+var enemyX = 0;
 var maxHealth = 10;
 var health = maxHealth;
 var spaceFiller = "";
@@ -99,7 +102,12 @@ enemyAttack = () =>{
                 if (health <= 0) {
                     drawMap()
                     battleEnding = true
-                    return new Promise((resolve) => setTimeout(() => {battling = false; drawMap();}, 2000));
+                    return new Promise((resolve) => setTimeout(() => {
+                        battling = false
+                        console.clear()
+                        console.log(chalk.magentaBright("You Died. Control-C to exit."))
+                        run = false
+                    }, 2000));
                 }
             } else {
                 enemyMiss = "Miss"
@@ -130,8 +138,19 @@ battle = (key) =>{
                     miss = "    "
                     if (enemyHealth <= 0) {
                         drawMap()
+
+                        //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
                         battleEnding = true
-                        return new Promise((resolve) => setTimeout(() => {battling = false; drawMap();}, 2000));
+                        eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 1)
+                        map[enemyY][enemyX] = chalk.bgBlack(".")
+                        return new Promise((resolve) => setTimeout(() => {
+                            battling = false;
+                            revealMap(lastDirection);
+                            drawMap();
+                            enemyHealth = maxEnemyHealth;
+                            enemyStarted = false;
+                            battleEnding = false;
+                        }, 2000));
                     }
                 } else {
                     miss = "Miss"
@@ -185,6 +204,7 @@ generateMap = (floor = 1) =>{
  */
 revealMap = (direction) =>{
     if (!battling) {
+        lastDirection = direction;
         switch(direction){
             case "up":
                 if (!eventLocations.includes(coords[0] - 1 + ", " + coords[1])) {
@@ -215,7 +235,15 @@ revealMap = (direction) =>{
                             drawMap()
                         }
                     }
-                } else {battling = true; drawMap(); if (!enemyStarted) {enemyAttack();};}
+                } else {
+                    battling = true;
+                    enemyY = coords[0] - 1
+                    enemyX = coords[1]
+                    drawMap(); 
+                    if (!enemyStarted) {
+                        enemyAttack();
+                    }
+                }
                 break;
             case "down":
                 if (!eventLocations.includes(coords[0] + 1 + ", " + coords[1])) {
@@ -247,7 +275,15 @@ revealMap = (direction) =>{
                         }
                         
                     }
-                } else {battling = true; drawMap(); if (!enemyStarted) {enemyAttack();};}
+                } else {
+                    battling = true;
+                    enemyY = coords[0] + 1
+                    enemyX = coords[1]
+                    drawMap();
+                    if (!enemyStarted) {
+                        enemyAttack();
+                    }
+                }
                 break;
             case "left":
                 if (!eventLocations.includes(coords[0] + ", " + (coords[1] - 1))) {
@@ -282,7 +318,15 @@ revealMap = (direction) =>{
                             drawMap()
                         }
                     }
-                } else {battling = true; drawMap(); if (!enemyStarted) {enemyAttack();};}
+                } else {
+                    battling = true;
+                    enemyY = coords[0]
+                    enemyX = (coords[1] - 1)
+                    drawMap();
+                    if (!enemyStarted) {
+                        enemyAttack();
+                    }
+                }
                 break;
             case "right":
                 if (!eventLocations.includes(coords[0] + ", " + (coords[1] + 1))) {
@@ -335,7 +379,15 @@ revealMap = (direction) =>{
                             drawMap()
                         }
                     }
-                } else {battling = true; drawMap(); if (!enemyStarted) {enemyAttack();};}
+                } else {
+                    battling = true;
+                    enemyY = coords[0]
+                    enemyX = (coords[1] + 1)
+                    drawMap();
+                    if (!enemyStarted) {
+                        enemyAttack();
+                    }
+                }
                 break;
             default:
                 console.log(chalk.magentaBright("Use the arrow keys to move!"));
@@ -355,17 +407,19 @@ drawMap()
 keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
-    if (!battling) {
-        revealMap(key.name)
-        //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
-        process.stdin.pause()
-        sleep(100).then(() => {
-        if(run){
-            process.stdin.resume()
-        } 
-    })
-    } else {
-        battle(key.name)
+    if (run) {
+        if (!battling) {
+            revealMap(key.name)
+            //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
+            process.stdin.pause()
+            sleep(100).then(() => {
+            if(run){
+                process.stdin.resume()
+            } 
+        })
+        } else {
+            battle(key.name)
+        }
     }
     //stops game.
     if (key && key.ctrl && key.name == 'c') {
