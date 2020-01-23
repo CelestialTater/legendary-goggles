@@ -102,7 +102,12 @@ enemyAttack = () =>{
                 if (health <= 0) {
                     drawMap()
                     battleEnding = true
-                    return new Promise((resolve) => setTimeout(() => {battling = false; drawMap();}, 2000));
+                    return new Promise((resolve) => setTimeout(() => {
+                        battling = false
+                        console.clear()
+                        console.log(chalk.magentaBright("You Died. Control-C to exit."))
+                        run = false
+                    }, 2000));
                 }
             } else {
                 enemyMiss = "Miss"
@@ -133,6 +138,8 @@ battle = (key) =>{
                     miss = "    "
                     if (enemyHealth <= 0) {
                         drawMap()
+
+                        //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
                         battleEnding = true
                         eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 1)
                         map[enemyY][enemyX] = chalk.bgBlack(".")
@@ -400,17 +407,19 @@ drawMap()
 keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
-    if (!battling) {
-        revealMap(key.name)
-        //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
-        process.stdin.pause()
-        sleep(100).then(() => {
-        if(run){
-            process.stdin.resume()
-        } 
-    })
-    } else {
-        battle(key.name)
+    if (run) {
+        if (!battling) {
+            revealMap(key.name)
+            //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
+            process.stdin.pause()
+            sleep(100).then(() => {
+            if(run){
+                process.stdin.resume()
+            } 
+        })
+        } else {
+            battle(key.name)
+        }
     }
     //stops game.
     if (key && key.ctrl && key.name == 'c') {
