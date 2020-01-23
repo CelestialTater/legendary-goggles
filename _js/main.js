@@ -6,12 +6,15 @@ const keypress = require("keypress")
 var map = [];
 var battleMap = [];
 var run = true;
+var lastDirection = "";
 var battling = false;
 var battleEnding = false;
 var enemyStarted = false;
 var maxEnemyHealth = 5;
 var enemyHealth = maxEnemyHealth;
 var currentEnemy = "8";
+var enemyY = 0;
+var enemyX = 0;
 var maxHealth = 10;
 var health = maxHealth;
 var spaceFiller = "";
@@ -131,7 +134,16 @@ battle = (key) =>{
                     if (enemyHealth <= 0) {
                         drawMap()
                         battleEnding = true
-                        return new Promise((resolve) => setTimeout(() => {battling = false; drawMap();}, 2000));
+                        eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 1)
+                        map[enemyY][enemyX] = chalk.bgBlack(".")
+                        return new Promise((resolve) => setTimeout(() => {
+                            battling = false;
+                            revealMap(lastDirection);
+                            drawMap();
+                            enemyHealth = maxEnemyHealth;
+                            enemyStarted = false;
+                            battleEnding = false;
+                        }, 2000));
                     }
                 } else {
                     miss = "Miss"
@@ -185,6 +197,7 @@ generateMap = (floor = 1) =>{
  */
 revealMap = (direction) =>{
     if (!battling) {
+        lastDirection = direction;
         switch(direction){
             case "up":
                 if (!eventLocations.includes(coords[0] - 1 + ", " + coords[1])) {
@@ -215,7 +228,15 @@ revealMap = (direction) =>{
                             drawMap()
                         }
                     }
-                } else {battling = true; drawMap(); if (!enemyStarted) {enemyAttack();};}
+                } else {
+                    battling = true;
+                    enemyY = coords[0] - 1
+                    enemyX = coords[1]
+                    drawMap(); 
+                    if (!enemyStarted) {
+                        enemyAttack();
+                    }
+                }
                 break;
             case "down":
                 if (!eventLocations.includes(coords[0] + 1 + ", " + coords[1])) {
@@ -247,7 +268,15 @@ revealMap = (direction) =>{
                         }
                         
                     }
-                } else {battling = true; drawMap(); if (!enemyStarted) {enemyAttack();};}
+                } else {
+                    battling = true;
+                    enemyY = coords[0] + 1
+                    enemyX = coords[1]
+                    drawMap();
+                    if (!enemyStarted) {
+                        enemyAttack();
+                    }
+                }
                 break;
             case "left":
                 if (!eventLocations.includes(coords[0] + ", " + (coords[1] - 1))) {
@@ -282,7 +311,15 @@ revealMap = (direction) =>{
                             drawMap()
                         }
                     }
-                } else {battling = true; drawMap(); if (!enemyStarted) {enemyAttack();};}
+                } else {
+                    battling = true;
+                    enemyY = coords[0]
+                    enemyX = (coords[1] - 1)
+                    drawMap();
+                    if (!enemyStarted) {
+                        enemyAttack();
+                    }
+                }
                 break;
             case "right":
                 if (!eventLocations.includes(coords[0] + ", " + (coords[1] + 1))) {
@@ -335,7 +372,15 @@ revealMap = (direction) =>{
                             drawMap()
                         }
                     }
-                } else {battling = true; drawMap(); if (!enemyStarted) {enemyAttack();};}
+                } else {
+                    battling = true;
+                    enemyY = coords[0]
+                    enemyX = (coords[1] + 1)
+                    drawMap();
+                    if (!enemyStarted) {
+                        enemyAttack();
+                    }
+                }
                 break;
             default:
                 console.log(chalk.magentaBright("Use the arrow keys to move!"));
