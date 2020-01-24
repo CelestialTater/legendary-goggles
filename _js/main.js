@@ -16,6 +16,8 @@ var currentEnemy = "8";
 var enemyY = 0;
 var enemyX = 0;
 var maxHealth = 10;
+var healthBar = [chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" ")]
+var enemyHealthBar = [chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" ")]
 var health = maxHealth;
 var spaceFiller = "";
 var miss = "    ";
@@ -56,14 +58,14 @@ drawMap = () =>{
         console.log("Dev coords: " + coords[0] + "," + coords[1])
         console.log(coords[1] + "," + coords[0])
     } else {
-
         //Creates battle interface
         battleMap = []
         battleMap.push(["\n"])
-        battleMap.push(["   " + spaceFiller + health + "/" + maxHealth + "          " + enemyHealth + "/" + maxEnemyHealth])
+        battleMap.push([" " + "[" +  drawHealthBar(healthBar) + "]" + "    " + "[" + drawHealthBar(enemyHealthBar) + "]"])
         battleMap.push(["\n"])
-        battleMap.push(["     @             " + currentEnemy])
+        battleMap.push(["      @             " + currentEnemy])
         battleMap.push(["    " + miss + "          " + enemyMiss])
+        battleMap.push(chalk.magentaBright(" --- Press Space to attack! ---"))
         
         for(i of battleMap){
             var string = ""
@@ -95,6 +97,7 @@ enemyAttack = () =>{
             //Enemy has a 1 in 4 chance of missing
             if(Math.floor(Math.random() * 5) != 4) {
                 health--
+                healthBar[health] = chalk.bgBlack(" ")
                 enemyMiss = ""
                 if (health < 10) {
                     spaceFiller = " "
@@ -123,6 +126,14 @@ enemyAttack = () =>{
     }, 1000));
 }
 
+drawHealthBar = (bar) =>{
+    let str = ""
+    for(i of bar){
+        str += i
+    }
+    return str
+}
+
 /**
  * Allows the character to battle an NPC
  * @param key key that triggered battle function
@@ -135,6 +146,7 @@ battle = (key) =>{
                 //Player has a 1 in 6 chance of missing
                 if(Math.floor(Math.random() * 7) != 6) {
                     enemyHealth--
+                    enemyHealthBar[enemyHealth] = chalk.bgBlack(" ")
                     miss = "    "
                     if (enemyHealth <= 0) {
                         drawMap()
@@ -146,7 +158,6 @@ battle = (key) =>{
                         return new Promise((resolve) => setTimeout(() => {
                             battling = false;
                             revealMap(lastDirection);
-                            drawMap();
                             enemyHealth = maxEnemyHealth;
                             enemyStarted = false;
                             battleEnding = false;
@@ -399,8 +410,15 @@ revealMap = (direction) =>{
 generateMap()
 let randomY = Math.floor(Math.random() * map.length - 1)
 let randomX = Math.floor(Math.random() * map[0].length - 1)
+if(randomY <= 0){
+    randomY++
+}
+if(randomX <= 0){
+    randomX++
+}
 let coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+revealMap("right")
 drawMap()
 
 //Key listeners and coordinate updates based on the movement.
