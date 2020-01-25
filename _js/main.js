@@ -17,7 +17,6 @@ var enemyY = 0;
 var enemyX = 0;
 var maxHealth = 10;
 var health = maxHealth;
-var spaceFiller = "";
 var miss = "    ";
 var enemyMiss = "";
 
