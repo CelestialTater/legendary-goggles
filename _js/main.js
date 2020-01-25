@@ -438,6 +438,9 @@ if(randomY <= 0){
 if(randomX <= 0){
     randomX++
 }
+if(randomX == 19){
+    randomX--
+}
 let coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 revealMap("right")
