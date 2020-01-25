@@ -6,8 +6,18 @@ const func = require("./funcs")
 //variable declaration
 var map = [];
 var battleInterface = [];
+var inventoryInterface = [];
 var run = true;
 var lastDirection = "";
+var keyPressedString = "";
+var accessingInventory = false;
+var inventory = {
+    meat:[3, "Meat", "1", "Regenerates 1 point of health."]
+};
+var amountUsing = 1;
+var itemUsing = "Meat";
+var inventoryLevel = 0;
+var inventoryString = "";
 var battling = false;
 var battleEnding = false;
 var enemyStarted = false;
@@ -47,7 +57,8 @@ printIcon = (icon, color, bg, y, x) =>{
  */
 drawUI = () =>{
     console.clear()
-    if (!battling) {
+    console.log("Health: " + health)
+    if (!battling && !accessingInventory) {
         for(i of map){
             var string = ""
             for(o of i){
@@ -59,7 +70,7 @@ drawUI = () =>{
         }
         console.log("Dev coords: " + coords[0] + "," + coords[1])
         console.log(coords[1] + "," + coords[0])
-    } else {
+    } else if (battling && !accessingInventory) {
         //Creates battle interface
         battleInterface = []
         battleInterface.push(["\n"])
@@ -68,10 +79,21 @@ drawUI = () =>{
         battleInterface.push(["      @             " + currentEnemy])
         battleInterface.push(["    " + miss + "          " + enemyMiss])
         battleInterface.push(chalk.magentaBright(" --- Press Space to attack! ---"))
-        
+
         for(i of battleInterface){
             var string = ""
             for(o of i){
+                string += o
+            }
+            string = chalk.green(string)
+            console.log(string)
+        }
+    } else {
+        //Creates inventory interface
+        updateInventoryInterface()
+        for (i of inventoryInterface) {
+            var string = ""
+            for (o of i) {
                 string += o
             }
             string = chalk.green(string)
@@ -81,9 +103,119 @@ drawUI = () =>{
 }
 
 /**
+ * Creates the inventory screen
+ */
+updateInventoryInterface = () =>{
+    inventoryInterface = []
+    if (inventoryLevel == 0) {
+        inventoryInterface.push("Inventory")
+        inventoryInterface.push("")
+        for (let item of Object.keys(inventory)) {
+            inventoryString = inventory[item.toString()][0] + "x ";
+            inventoryString = inventoryString + inventory[item.toString()][1];
+            inventoryString = inventoryString + " [" + inventory[item.toString()][2] + "]";
+            inventoryInterface.push(inventoryString)
+            inventoryInterface.push(inventory[item.toString()][3])
+            inventoryInterface.push("")
+        }
+    } else {
+        inventoryInterface.push("Using " + amountUsing + "/" + inventory[itemUsing][0] + " " + itemUsing)
+        inventoryInterface.push("")
+        inventoryInterface.push("Press up and down arrows to change amount using, press enter to confirm")
+    }
+}
+
+/**
+ * Lets the user look at and use items in their inventory
+ */
+useInventory = (key, ch) =>{
+
+    if (key != null && key.name == "escape") {
+        ch = "escape";
+    }
+
+    if (inventoryLevel == 0) {
+
+        switch (ch) {
+            case "1":
+                if (inventory["meat"][0] >= 1) {
+                    itemUsing = "meat"
+                    inventoryLevel = 1
+                    drawUI()
+                }
+                break;
+
+            case "escape":
+                accessingInventory = false;
+                drawUI()
+
+            default:
+                break;
+        }
+
+    } else {
+
+        switch (key.name) {
+            case "up":
+                if ((amountUsing + 1) <= inventory[itemUsing][0]) {
+                    amountUsing++;
+                }
+                break;
+
+            case "down":
+                if ((amountUsing - 1) >= 1) {
+                    amountUsing--;
+                }
+                break;
+
+            case "return":
+                inventory[itemUsing][0] -= amountUsing;
+                useItem();
+                break;
+
+            case "escape":
+                inventoryLevel = 0;
+                drawUI()
+        
+            default:
+                break;
+        }
+    }
+    drawUI()
+}
+
+/**
+ * Consumes items and activates effects of said items
+ */
+useItem = () =>{
+    switch (itemUsing) {
+        case "meat":
+            
+            if (amountUsing + health <= maxHealth) {
+                health += amountUsing;
+                inventoryLevel = 0;
+                drawUI();
+            } else {
+                health = maxHealth;
+                inventoryLevel = 0;
+                drawUI();
+                console.log(chalk.magentaBright("What a waste of food..."))
+            }
+
+            amountUsing = 0;
+
+            break;
+    
+        default:
+            break;
+    }
+}
+
+/**
  * Sets the enemy to attack after a certain amount of time
  */
 enemyAttack = () =>{
+    healthBar = func.generateHealthBar(maxHealth, health);
     enemyStarted = true;
     return new Promise((resolve) => setTimeout(() => {
 
@@ -131,12 +263,17 @@ battle = (key) =>{
             case "space":
 
                 //Player has a 1 in 6 chance of missing
-                if(Math.floor(Math.random() * 7) != 6) {
+                if (Math.floor(Math.random() * 7) != 6) {
                     enemyHealth--
                     enemyHealthBar[enemyHealth] = chalk.bgBlack(" ")
                     miss = "    "
                     if (enemyHealth <= 0) {
                         drawUI()
+
+                        //Give items to player
+                        if (Math.floor(Math.random() * 5) != 4) {
+                            inventory["meat"][0]++;
+                        }
 
                         //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
                         battleEnding = true
@@ -169,7 +306,7 @@ battle = (key) =>{
  * @param direction direction of movement
  */
 revealMap = (direction) => {
-    if (!battling) {
+    if (!battling && !accessingInventory) {
         lastDirection = direction;
         switch(direction){
             case "up":
@@ -355,6 +492,16 @@ revealMap = (direction) => {
                     }
                 }
                 break;
+
+            case "i":
+                
+                accessingInventory = true;
+                inventoryLevel = 0;
+                itemsUsing = 0;
+                drawUI();
+
+                break;
+
             default:
                 console.log(chalk.magentaBright("Use the arrow keys to move!"));
                 break;
@@ -439,7 +586,7 @@ keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
     if (run) {
-        if (!battling) {
+        if (!battling && !accessingInventory) {
             revealMap(key.name)
             //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
             process.stdin.pause()
@@ -448,8 +595,12 @@ process.stdin.on('keypress', function (ch, key) {
                 process.stdin.resume()
             } 
         })
-        } else {
+        } else if (battling && !accessingInventory) {
             battle(key.name)
+        } else if (!battling && accessingInventory) {
+            useInventory(key, ch)
+        } else {
+            drawUI();
         }
     }
     //stops game.

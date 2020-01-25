@@ -20,12 +20,19 @@ module.exports = {
     },
     /**
      * Generates a health bar
-     * @param len the size of the health bar (aka: max health)
+     * @param max the size of the health bar (aka: max health)
+     * @param current the current health to generate
      */
-    generateHealthBar: function(len){
+    generateHealthBar: function(max, current = -1){
+        if (current == -1) {
+            current = max;
+        }
         var bar = []
-        for(i = 0; i < len; i++){
+        for(i = 0; i < current; i++){
             bar.push(chalk.bgWhite(" "))
+        }
+        for(i = 0; i < (max - current); i++){
+            bar.push(chalk.bgBlack(" "))
         }
         return bar
     },
