@@ -1,6 +1,7 @@
 //Imports
 const chalk = require("chalk")
 const keypress = require("keypress")
+const func = require("./funcs")
 
 //variable declaration
 var map = [];
@@ -62,7 +63,7 @@ drawMap = () =>{
         //Creates battle interface
         battleMap = []
         battleMap.push(["\n"])
-        battleMap.push([" "  + "[" + drawHealthBar(healthBar) + "]" + "    " + "[" + drawHealthBar(enemyHealthBar) + "]"])
+        battleMap.push([" "  + "[" + func.drawHealthBar(healthBar) + "]" + "    " + "[" + func.drawHealthBar(enemyHealthBar) + "]"])
         battleMap.push(["\n"])
         battleMap.push(["      @             " + currentEnemy])
         battleMap.push(["    " + miss + "          " + enemyMiss])
@@ -77,13 +78,6 @@ drawMap = () =>{
             console.log(string)
         }
     }
-}
-/**
- * Sleep function
- * @param time time in milliseconds
- */
-sleep = (time) =>{
-    return new Promise((resolve) => setTimeout(resolve, time));
 }
 
 /**
@@ -127,31 +121,6 @@ enemyAttack = () =>{
     }, 1000));
 }
 
-
-/**
- * Converts a health bar to a string
- * @param bar bar to convert
- */
-drawHealthBar = (bar) =>{
-    let str = ""
-    for(i of bar){
-        str += i
-    }
-    return str
-}
-
-/**
- * Generates a health bar
- * @param len the size of the health bar (aka: max health)
- */
-generateHealthBar = (len) =>{
-    var bar = []
-    for(i = 0; i < len; i++){
-        bar.push(chalk.bgWhite(" "))
-    }
-    return bar
-}
-
 /**
  * Allows the character to battle an NPC
  * @param key key that triggered battle function
@@ -177,7 +146,7 @@ battle = (key) =>{
                             battling = false;
                             revealMap(lastDirection);
                             enemyHealth = maxEnemyHealth;
-                            enemyHealthBar = generateHealthBar(5)
+                            enemyHealthBar = func.generateHealthBar(5)
                             enemyStarted = false;
                             battleEnding = false;
                         }, 2000));
@@ -195,46 +164,11 @@ battle = (key) =>{
     drawMap()
 }
 
-var eventLocations = []
-/**
- * Generates a map with events in random positions
- * @param floor (currently no use, will affect generation in future). defaults to 1
- */
-generateMap = (floor = 1) =>{
-    //TODO: Add floors and differences between floors
-    switch(floor){
-        case 1:
-            maxEnemyHealth = 5
-            enemyHealth = maxEnemyHealth
-            for(var arr = 0; arr < 15; arr++){
-                var str = []
-                for(var chr = 0; chr < 20; chr++){
-                    str.push(".")
-                }
-                map.push(str);
-            }
-            for(var scc = 0; scc < 10; scc++){
-                let randY = Math.floor(Math.random() * 15)
-                let randX = Math.floor(Math.random() * 20)
-                if (map[randY][randX] == "8"){
-                    scc--;
-                }else{
-                    map[randY][randX] = "8"
-                    eventLocations.push(randY + ", " + randX) 
-                }
-               
-            }
-            break;
-        default:
-            console.log("Error: generateMap invalid input")
-    }
-}
-
 /**
  * Reveals appropriate map tiles
  * @param direction direction of movement
  */
-revealMap = (direction) =>{
+revealMap = (direction) => {
     if (!battling) {
         lastDirection = direction;
         switch(direction){
@@ -428,9 +362,10 @@ revealMap = (direction) =>{
     }
 }
 
-generateMap()
-var healthBar = generateHealthBar(maxHealth)
-var enemyHealthBar = generateHealthBar(maxEnemyHealth)
+var map = func.generateMap()
+var eventLocations = func.getEvents(map)
+var healthBar = func.generateHealthBar(maxHealth)
+var enemyHealthBar = func.generateHealthBar(maxEnemyHealth)
 let randomY = Math.floor(Math.random() * map.length - 1)
 let randomX = Math.floor(Math.random() * map[0].length - 1)
 if(randomY <= 0){
@@ -446,6 +381,7 @@ let coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 revealMap("right")
 drawMap()
+console.log(eventLocations)
 
 //Key listeners and coordinate updates based on the movement.
 keypress(process.stdin);
@@ -456,7 +392,7 @@ process.stdin.on('keypress', function (ch, key) {
             revealMap(key.name)
             //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
             process.stdin.pause()
-            sleep(100).then(() => {
+            func.sleep(100).then(() => {
             if(run){
                 process.stdin.resume()
             } 
