@@ -204,6 +204,8 @@ generateMap = (floor = 1) =>{
     //TODO: Add floors and differences between floors
     switch(floor){
         case 1:
+            maxEnemyHealth = 5
+            enemyHealth = maxEnemyHealth
             for(var arr = 0; arr < 15; arr++){
                 var str = []
                 for(var chr = 0; chr < 20; chr++){
