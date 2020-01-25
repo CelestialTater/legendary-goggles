@@ -5,7 +5,7 @@ const func = require("./funcs")
 
 //variable declaration
 var map = [];
-var battleMap = [];
+var battleInterface = [];
 var run = true;
 var lastDirection = "";
 var battling = false;
@@ -45,7 +45,7 @@ printIcon = (icon, color, bg, y, x) =>{
 /**
  * Draws the map on the console. Should be run after printing icons and during battles.
  */
-drawMap = () =>{
+drawUI = () =>{
     console.clear()
     if (!battling) {
         for(i of map){
@@ -61,15 +61,15 @@ drawMap = () =>{
         console.log(coords[1] + "," + coords[0])
     } else {
         //Creates battle interface
-        battleMap = []
-        battleMap.push(["\n"])
-        battleMap.push([" "  + "[" + func.drawHealthBar(healthBar) + "]" + "    " + "[" + func.drawHealthBar(enemyHealthBar) + "]"])
-        battleMap.push(["\n"])
-        battleMap.push(["      @             " + currentEnemy])
-        battleMap.push(["    " + miss + "          " + enemyMiss])
-        battleMap.push(chalk.magentaBright(" --- Press Space to attack! ---"))
+        battleInterface = []
+        battleInterface.push(["\n"])
+        battleInterface.push([" "  + "[" + func.drawHealthBar(healthBar) + "]" + "    " + "[" + func.drawHealthBar(enemyHealthBar) + "]"])
+        battleInterface.push(["\n"])
+        battleInterface.push(["      @             " + currentEnemy])
+        battleInterface.push(["    " + miss + "          " + enemyMiss])
+        battleInterface.push(chalk.magentaBright(" --- Press Space to attack! ---"))
         
-        for(i of battleMap){
+        for(i of battleInterface){
             var string = ""
             for(o of i){
                 string += o
@@ -98,7 +98,7 @@ enemyAttack = () =>{
                     spaceFiller = " "
                 }
                 if (health <= 0) {
-                    drawMap()
+                    drawUI()
                     battleEnding = true
                     return new Promise((resolve) => setTimeout(() => {
                         battling = false
@@ -116,7 +116,7 @@ enemyAttack = () =>{
                 enemyAttack()
             }
         }
-        drawMap()
+        drawUI()
         
     }, 1000));
 }
@@ -136,7 +136,7 @@ battle = (key) =>{
                     enemyHealthBar[enemyHealth] = chalk.bgBlack(" ")
                     miss = "    "
                     if (enemyHealth <= 0) {
-                        drawMap()
+                        drawUI()
 
                         //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
                         battleEnding = true
@@ -161,7 +161,7 @@ battle = (key) =>{
         }
     }
 
-    drawMap()
+    drawUI()
 }
 
 /**
@@ -179,7 +179,7 @@ revealMap = (direction) => {
                         coords[0]--
                         if(coords[0] == 0){
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
-                            drawMap()
+                            drawUI()
                         }else if(coords[1] == map[0].length - 1){
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
@@ -187,7 +187,7 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }else{
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -198,14 +198,14 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }
                     }
                 } else {
                     battling = true;
                     enemyY = coords[0] - 1
                     enemyX = coords[1]
-                    drawMap(); 
+                    drawUI(); 
                     if (!enemyStarted) {
                         enemyAttack();
                     }
@@ -218,7 +218,7 @@ revealMap = (direction) => {
                         coords[0]++
                         if(coords[0] == map.length - 1){
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }else if(coords[1] == map[0].length - 1){
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
@@ -226,7 +226,7 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1]) 
-                            drawMap()
+                            drawUI()
                         }else{
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -237,7 +237,7 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }
                         
                     }
@@ -245,7 +245,7 @@ revealMap = (direction) => {
                     battling = true;
                     enemyY = coords[0] + 1
                     enemyX = coords[1]
-                    drawMap();
+                    drawUI();
                     if (!enemyStarted) {
                         enemyAttack();
                     }
@@ -263,14 +263,14 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])   
-                            drawMap()
+                            drawUI()
                         }else if(coords[0] == map.length - 1){
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
                             printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
                             printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                             printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }else{
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -281,14 +281,14 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }
                     }
                 } else {
                     battling = true;
                     enemyY = coords[0]
                     enemyX = (coords[1] - 1)
-                    drawMap();
+                    drawUI();
                     if (!enemyStarted) {
                         enemyAttack();
                     }
@@ -302,10 +302,10 @@ revealMap = (direction) => {
                         if(coords[1] == map[0].length - 1){
                             if(coords[0] == 0){
                                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                                drawMap()
+                                drawUI()
                             }else if(coords[0] == map.length - 1){
                                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                                drawMap()
+                                drawUI()
                             }else{
                                 printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                                 printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
@@ -313,7 +313,7 @@ revealMap = (direction) => {
                                 printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                                 printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1]) 
-                                drawMap()
+                                drawUI()
                             }
                         }else if(coords[0] == map.length - 1){ 
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -323,7 +323,7 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
                             
-                            drawMap()  
+                            drawUI()  
                         }else if(coords[0] == 0){
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
@@ -331,7 +331,7 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }else{
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -342,14 +342,14 @@ revealMap = (direction) => {
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }
                     }
                 } else {
                     battling = true;
                     enemyY = coords[0]
                     enemyX = (coords[1] + 1)
-                    drawMap();
+                    drawUI();
                     if (!enemyStarted) {
                         enemyAttack();
                     }
@@ -380,7 +380,7 @@ if(randomX == 19){
 let coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 revealMap("right")
-drawMap()
+drawUI()
 console.log(eventLocations)
 
 //Key listeners and coordinate updates based on the movement.
