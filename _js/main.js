@@ -16,8 +16,6 @@ var currentEnemy = "8";
 var enemyY = 0;
 var enemyX = 0;
 var maxHealth = 10;
-var healthBar = [chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" ")]
-var enemyHealthBar = [chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" "),chalk.bgWhite(" ")]
 var health = maxHealth;
 var spaceFiller = "";
 var miss = "    ";
@@ -28,7 +26,11 @@ var specialChars = ["8", chalk.blueBright]
 
 /**
  * Prints an icon to the map
- * @params icon to draw, color of icon, position of icon
+ * @param icon icon to draw
+ * @param color color of icon
+ * @param bg background color
+ * @param y y-position
+ * @param x x-position
  */
 printIcon = (icon, color, bg, y, x) =>{
     if(specialChars.includes(icon)){
@@ -61,7 +63,7 @@ drawMap = () =>{
         //Creates battle interface
         battleMap = []
         battleMap.push(["\n"])
-        battleMap.push([" " + "[" +  drawHealthBar(healthBar) + "]" + "    " + "[" + drawHealthBar(enemyHealthBar) + "]"])
+        battleMap.push([" "  + "[" + drawHealthBar(healthBar) + "]" + "    " + "[" + drawHealthBar(enemyHealthBar) + "]"])
         battleMap.push(["\n"])
         battleMap.push(["      @             " + currentEnemy])
         battleMap.push(["    " + miss + "          " + enemyMiss])
@@ -79,7 +81,7 @@ drawMap = () =>{
 }
 /**
  * Sleep function
- * @params time in milliseconds
+ * @param time time in milliseconds
  */
 sleep = (time) =>{
     return new Promise((resolve) => setTimeout(resolve, time));
@@ -126,12 +128,29 @@ enemyAttack = () =>{
     }, 1000));
 }
 
+
+/**
+ * Converts a health bar to a string
+ * @param bar bar to convert
+ */
 drawHealthBar = (bar) =>{
     let str = ""
     for(i of bar){
         str += i
     }
     return str
+}
+
+/**
+ * Generates a health bar
+ * @param len the size of the health bar (aka: max health)
+ */
+generateHealthBar = (len) =>{
+    var bar = []
+    for(i = 0; i < len; i++){
+        bar.push(chalk.bgWhite(" "))
+    }
+    return bar
 }
 
 /**
@@ -159,6 +178,7 @@ battle = (key) =>{
                             battling = false;
                             revealMap(lastDirection);
                             enemyHealth = maxEnemyHealth;
+                            enemyHealthBar = generateHealthBar(5)
                             enemyStarted = false;
                             battleEnding = false;
                         }, 2000));
@@ -179,7 +199,7 @@ battle = (key) =>{
 var eventLocations = []
 /**
  * Generates a map with events in random positions
- * @params floor (currently no use, will affect generation in future). defaults to 1
+ * @param floor (currently no use, will affect generation in future). defaults to 1
  */
 generateMap = (floor = 1) =>{
     //TODO: Add floors and differences between floors
@@ -211,7 +231,7 @@ generateMap = (floor = 1) =>{
 
 /**
  * Reveals appropriate map tiles
- * @params direction of movement
+ * @param direction direction of movement
  */
 revealMap = (direction) =>{
     if (!battling) {
@@ -408,6 +428,8 @@ revealMap = (direction) =>{
 }
 
 generateMap()
+var healthBar = generateHealthBar(maxHealth)
+var enemyHealthBar = generateHealthBar(maxEnemyHealth)
 let randomY = Math.floor(Math.random() * map.length - 1)
 let randomX = Math.floor(Math.random() * map[0].length - 1)
 if(randomY <= 0){
