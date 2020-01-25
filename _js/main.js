@@ -361,7 +361,57 @@ revealMap = (direction) => {
         }
     }
 }
+playIntro = () =>{
+    console.clear()
+    console.log("\n")
+    console.log("                                " + chalk.bgWhite("     "))
+    console.log("     " + chalk.yellow("@") + "    " + chalk.white("  ") + " " + chalk.white("  "))
+    func.sleep(100).then(() =>{
+        console.clear()
+        console.log("\n")
+        console.log("          " + chalk.bgWhite("     "))
+        console.log("     " + chalk.yellow("@") + "    " + chalk.bgWhite("  ") + " " + chalk.bgWhite("  "))
+        func.sleep(100).then(() =>{
+            console.clear()
+            console.log("\n")
+            console.log("          " + chalk.bgWhite("     "))
+            console.log("      " + chalk.yellow("@") + "   " + chalk.bgWhite("  ") + " " + chalk.bgWhite("  "))
+            func.sleep(100).then(() =>{
+                console.clear()
+                console.log("\n")
+                console.log("          " + chalk.bgWhite("     "))
+                console.log("       " + chalk.yellow("@") + "  " + chalk.bgWhite("  ") + " " + chalk.bgWhite("  "))
+                func.sleep(100).then(() =>{
+                    console.clear()
+                    console.log("\n")
+                    console.log("          " + chalk.bgWhite("     "))
+                    console.log("        " + chalk.yellow("@") + " " + chalk.bgWhite("  ") + " " + chalk.bgWhite("  "))
+                    func.sleep(100).then(() =>{
+                        console.clear()
+                        console.log("\n")
+                        console.log("          " + chalk.bgWhite("     "))
+                        console.log("          " + chalk.bgWhite(chalk.yellow("@ ")) + " " + chalk.bgWhite("  "))
+                        func.sleep(100).then(() =>{
+                            console.clear()
+                            console.log("\n")
+                            console.log("          " + chalk.bgWhite("     "))
+                            console.log("          " + chalk.bgWhite(chalk.yellow(" @")) + " " + chalk.bgWhite("  "))
+                            func.sleep(100).then(() =>{
+                                console.clear()
+                                console.log("\n")
+                                console.log("          " + chalk.bgWhite("     "))
+                                console.log("          " + chalk.bgWhite("  ") + chalk.yellow("@") + chalk.bgWhite("  "))
+                            })
+                        })
+                    })
+                })
+            })
+        })
+    })
+}
 
+
+playIntro()
 var map = func.generateMap()
 var eventLocations = func.getEvents(map)
 var healthBar = func.generateHealthBar(maxHealth)
@@ -379,9 +429,10 @@ if(randomX == 19){
 }
 let coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-revealMap("right")
-drawUI()
-console.log(eventLocations)
+
+func.sleep(1200).then(()=>{
+    revealMap("right")
+})
 
 //Key listeners and coordinate updates based on the movement.
 keypress(process.stdin);
