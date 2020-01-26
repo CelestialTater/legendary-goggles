@@ -3,13 +3,13 @@ const chalk = require("chalk")
 const keypress = require("keypress")
 const func = require("./funcs")
 
-//variable declaration
+//Variable declaration
+var introStep = 0;
 var map = [];
 var battleInterface = [];
 var inventoryInterface = [];
-var run = true;
+var run = false;
 var lastDirection = "";
-var keyPressedString = "";
 var accessingInventory = false;
 var inventory = {
     meat:[3, "Meat", "1", "Regenerates 1 point of health."]
@@ -56,48 +56,50 @@ printIcon = (icon, color, bg, y, x) =>{
  * Draws the map on the console. Should be run after printing icons and during battles.
  */
 drawUI = () =>{
-    console.clear()
-    console.log("Health: " + health)
-    if (!battling && !accessingInventory) {
-        for(i of map){
-            var string = ""
-            for(o of i){
-                string += o
+    if (run) {
+        console.clear()
+        console.log("Health: " + health)
+        if (!battling && !accessingInventory) {
+            for(i of map){
+                var string = ""
+                for(o of i){
+                    string += o
+                }
+                string = chalk.bgGreen(string)
+                string = chalk.green(string)
+                console.log(string)
             }
-            string = chalk.bgGreen(string)
-            string = chalk.green(string)
-            console.log(string)
-        }
-        console.log("Dev coords: " + coords[0] + "," + coords[1])
-        console.log(coords[1] + "," + coords[0])
-    } else if (battling && !accessingInventory) {
-        //Creates battle interface
-        battleInterface = []
-        battleInterface.push(["\n"])
-        battleInterface.push([" "  + "[" + func.drawHealthBar(healthBar) + "]" + "    " + "[" + func.drawHealthBar(enemyHealthBar) + "]"])
-        battleInterface.push(["\n"])
-        battleInterface.push(["      @             " + currentEnemy])
-        battleInterface.push(["    " + miss + "          " + enemyMiss])
-        battleInterface.push(chalk.magentaBright(" --- Press Space to attack! ---"))
+            console.log("Dev coords: " + coords[0] + "," + coords[1])
+            console.log(coords[1] + "," + coords[0])
+        } else if (battling && !accessingInventory) {
+            //Creates battle interface
+            battleInterface = []
+            battleInterface.push(["\n"])
+            battleInterface.push([" "  + "[" + func.drawHealthBar(healthBar) + "]" + "    " + "[" + func.drawHealthBar(enemyHealthBar) + "]"])
+            battleInterface.push(["\n"])
+            battleInterface.push(["      @             " + currentEnemy])
+            battleInterface.push(["    " + miss + "          " + enemyMiss])
+            battleInterface.push(chalk.magentaBright(" --- Press Space to attack! ---"))
 
-        for(i of battleInterface){
-            var string = ""
-            for(o of i){
-                string += o
+            for(i of battleInterface){
+                var string = ""
+                for(o of i){
+                    string += o
+                }
+                string = chalk.green(string)
+                console.log(string)
             }
-            string = chalk.green(string)
-            console.log(string)
-        }
-    } else {
-        //Creates inventory interface
-        updateInventoryInterface()
-        for (i of inventoryInterface) {
-            var string = ""
-            for (o of i) {
-                string += o
+        } else {
+            //Creates inventory interface
+            updateInventoryInterface()
+            for (i of inventoryInterface) {
+                var string = ""
+                for (o of i) {
+                    string += o
+                }
+                string = chalk.green(string)
+                console.log(string)
             }
-            string = chalk.green(string)
-            console.log(string)
         }
     }
 }
@@ -159,12 +161,14 @@ useInventory = (key, ch) =>{
             case "up":
                 if ((amountUsing + 1) <= inventory[itemUsing][0]) {
                     amountUsing++;
+                    drawUI();
                 }
                 break;
 
             case "down":
                 if ((amountUsing - 1) >= 1) {
                     amountUsing--;
+                    drawUI();
                 }
                 break;
 
@@ -181,7 +185,6 @@ useInventory = (key, ch) =>{
                 break;
         }
     }
-    drawUI()
 }
 
 /**
@@ -508,53 +511,203 @@ revealMap = (direction) => {
         }
     }
 }
+
+/**
+ * Animation for the beginning of the game
+ */
 playIntro = () =>{
-    console.clear()
-    console.log("\n")
-    console.log("                                " + chalk.bgWhite("     "))
-    console.log("     " + chalk.yellow("@") + "    " + chalk.white("  ") + " " + chalk.white("  "))
-    func.sleep(100).then(() =>{
-        console.clear()
-        console.log("\n")
-        console.log("          " + chalk.bgWhite("     "))
-        console.log("     " + chalk.yellow("@") + "    " + chalk.bgWhite("  ") + " " + chalk.bgWhite("  "))
-        func.sleep(100).then(() =>{
+    switch (true) {
+        case (introStep == 0):
+
+            console.clear()
+            console.log(chalk.rgb(193, 156, 0)(String.raw`  _                                    _                     `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw` | |                                  | |                    `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+            console.log(chalk.rgb(193, 156, 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+            console.log(chalk.rgb(193, 156, 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`                __/ |                                   __/ |`))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`               |___/                                   |___/ `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`           _____                       _                     `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`          / ____|                     | |                    `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`                          __/ |  __/ |                       `))
+            console.log(chalk.rgb(193, 156, 0)(String.raw`                         |___/  |___/                        `))
+            introStep++;
+            return new Promise((resolve) => setTimeout(() => {playIntro();}, 3000));
+
+            break;
+
+        case (introStep < 11 && introStep > 0):
+            console.clear()
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`  _                                    _                     `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |                                  | |                    `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                __/ |                                   __/ |`))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`               |___/                                   |___/ `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`           _____                       _                     `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          / ____|                     | |                    `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                          __/ |  __/ |                       `))
+            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                         |___/  |___/                        `))
+            introStep++;
+            return new Promise((resolve) => setTimeout(() => {playIntro();}, 200));
+
+            break;
+        case (introStep == 11):
+            
+            introStep++;
+            return new Promise((resolve) => setTimeout(() => {playIntro();}, 1750));
+
+            break;
+
+        case (introStep >= 12):
+
             console.clear()
             console.log("\n")
-            console.log("          " + chalk.bgWhite("     "))
-            console.log("      " + chalk.yellow("@") + "   " + chalk.bgWhite("  ") + " " + chalk.bgWhite("  "))
-            func.sleep(100).then(() =>{
+            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+            console.log("     " + chalk.rgb(193, 156, 0)("@") + "    " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+            func.sleep(300).then(() =>{
                 console.clear()
                 console.log("\n")
-                console.log("          " + chalk.bgWhite("     "))
-                console.log("       " + chalk.yellow("@") + "  " + chalk.bgWhite("  ") + " " + chalk.bgWhite("  "))
-                func.sleep(100).then(() =>{
+                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                console.log("     " + chalk.rgb(193, 156, 0)("@") + "    " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                func.sleep(300).then(() =>{
                     console.clear()
                     console.log("\n")
-                    console.log("          " + chalk.bgWhite("     "))
-                    console.log("        " + chalk.yellow("@") + " " + chalk.bgWhite("  ") + " " + chalk.bgWhite("  "))
-                    func.sleep(100).then(() =>{
+                    console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                    console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                    console.log("      " + chalk.rgb(193, 156, 0)("@") + "   " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                    func.sleep(300).then(() =>{
                         console.clear()
                         console.log("\n")
-                        console.log("          " + chalk.bgWhite("     "))
-                        console.log("          " + chalk.bgWhite(chalk.yellow("@ ")) + " " + chalk.bgWhite("  "))
-                        func.sleep(100).then(() =>{
+                        console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                        console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                        console.log("       " + chalk.rgb(193, 156, 0)("@") + "  " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                        func.sleep(300).then(() =>{
                             console.clear()
                             console.log("\n")
-                            console.log("          " + chalk.bgWhite("     "))
-                            console.log("          " + chalk.bgWhite(chalk.yellow(" @")) + " " + chalk.bgWhite("  "))
-                            func.sleep(100).then(() =>{
+                            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                            console.log("        " + chalk.rgb(193, 156, 0)("@") + " " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                            func.sleep(300).then(() =>{
                                 console.clear()
                                 console.log("\n")
-                                console.log("          " + chalk.bgWhite("     "))
-                                console.log("          " + chalk.bgWhite("  ") + chalk.yellow("@") + chalk.bgWhite("  "))
+                                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)("@ ")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                func.sleep(300).then(() =>{
+                                    console.clear()
+                                    console.log("\n")
+                                    console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                    console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                    console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)(" @")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                    func.sleep(300).then(() =>{
+                                        console.clear()
+                                        console.log("\n")
+                                        console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                        console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                        console.log("          " + chalk.bgRgb(255, 255, 255)("  ") + chalk.rgb(193, 156, 0)("@") + chalk.bgRgb(255, 255, 255)("  "))
+                                        func.sleep(150).then(() =>{
+                                            console.clear()
+                                            console.log("\n")
+                                            console.log("          " + chalk.bgRgb(230, 230, 230)("     "))
+                                            console.log("          " + chalk.bgRgb(230, 230, 230)("     "))
+                                            console.log("          " + chalk.bgRgb(230, 230, 230)("  ") + chalk.rgb(173, 140, 0)("@") + chalk.bgRgb(230, 230, 230)("  "))
+                                            func.sleep(150).then(() =>{
+                                                console.clear()
+                                                console.log("\n")
+                                                console.log("          " + chalk.bgRgb(205, 205, 205)("     "))
+                                                console.log("          " + chalk.bgRgb(205, 205, 205)("     "))
+                                                console.log("          " + chalk.bgRgb(205, 205, 205)("  ") + chalk.rgb(153, 125, 0)("@") + chalk.bgRgb(205, 205, 205)("  "))
+                                                func.sleep(150).then(() =>{
+                                                    console.clear()
+                                                    console.log("\n")
+                                                    console.log("          " + chalk.bgRgb(180, 180, 180)("     "))
+                                                    console.log("          " + chalk.bgRgb(180, 180, 180)("     "))
+                                                    console.log("          " + chalk.bgRgb(180, 180, 180)("  ") + chalk.rgb(133, 110, 0)("@") + chalk.bgRgb(180, 180, 180)("  "))
+                                                    func.sleep(150).then(() =>{
+                                                        console.clear()
+                                                        console.log("\n")
+                                                        console.log("          " + chalk.bgRgb(155, 155, 155)("     "))
+                                                        console.log("          " + chalk.bgRgb(155, 155, 155)("     "))
+                                                        console.log("          " + chalk.bgRgb(155, 155, 155)("  ") + chalk.rgb(113, 95, 0)("@") + chalk.bgRgb(155, 155, 155)("  "))
+                                                        func.sleep(150).then(() =>{
+                                                            console.clear()
+                                                            console.log("\n")
+                                                            console.log("          " + chalk.bgRgb(130, 130, 130)("     "))
+                                                            console.log("          " + chalk.bgRgb(130, 130, 130)("     "))
+                                                            console.log("          " + chalk.bgRgb(130, 130, 130)("  ") + chalk.rgb(93, 80, 0)("@") + chalk.bgRgb(130, 130, 130)("  "))
+                                                            func.sleep(150).then(() =>{
+                                                                console.clear()
+                                                                console.log("\n")
+                                                                console.log("          " + chalk.bgRgb(105, 105, 105)("     "))
+                                                                console.log("          " + chalk.bgRgb(105, 105, 105)("     "))
+                                                                console.log("          " + chalk.bgRgb(105, 105, 105)("  ") + chalk.rgb(73, 65, 0)("@") + chalk.bgRgb(105, 105, 105)("  "))
+                                                                func.sleep(150).then(() =>{
+                                                                    console.clear()
+                                                                    console.log("\n")
+                                                                    console.log("          " + chalk.bgRgb(80, 80, 80)("     "))
+                                                                    console.log("          " + chalk.bgRgb(80, 80, 80)("     "))
+                                                                    console.log("          " + chalk.bgRgb(80, 80, 80)("  ") + chalk.rgb(53, 50, 0)("@") + chalk.bgRgb(80, 80, 80)("  "))
+                                                                    func.sleep(150).then(() =>{
+                                                                        console.clear()
+                                                                        console.log("\n")
+                                                                        console.log("          " + chalk.bgRgb(55, 55, 55)("     "))
+                                                                        console.log("          " + chalk.bgRgb(55, 55, 55)("     "))
+                                                                        console.log("          " + chalk.bgRgb(55, 55, 55)("  ") + chalk.rgb(33, 33, 0)("@") + chalk.bgRgb(55, 55, 55)("  "))
+                                                                        func.sleep(150).then(() =>{
+                                                                            console.clear()
+                                                                            console.log("\n")
+                                                                            console.log("          " + chalk.bgRgb(30, 30, 30)("     "))
+                                                                            console.log("          " + chalk.bgRgb(30, 30, 30)("     "))
+                                                                            console.log("          " + chalk.bgRgb(30, 30, 30)("  ") + chalk.rgb(13, 15, 0)("@") + chalk.bgRgb(30, 30, 30)("  "))
+                                                                            func.sleep(150).then(() =>{
+                                                                                console.clear()
+                                                                                console.log("\n")
+                                                                                console.log("          " + chalk.bgBlack("     "))
+                                                                                console.log("          " + chalk.bgBlack("     "))
+                                                                                console.log("          " + chalk.bgBlack("  ") + chalk.black("@") + chalk.bgBlack("  "))
+                                                                                func.sleep(150).then(() =>{
+                                                                                    run = true;
+                                                                                    revealMap("right");
+                                                                                })
+                                                                            })
+                                                                        })
+                                                                    })
+                                                                })
+                                                            })
+                                                        })
+                                                    })
+                                                })
+                                            })
+                                        })
+                                    })
+                                })
                             })
                         })
                     })
                 })
             })
-        })
-    })
+
+            break;
+
+        default:
+            console.log("Error: Invalid introStep of " + introStep);
+            break;
+    }
+    
 }
 
 
@@ -576,10 +729,6 @@ if(randomX == 19){
 }
 let coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-
-func.sleep(1200).then(()=>{
-    revealMap("right")
-})
 
 //Key listeners and coordinate updates based on the movement.
 keypress(process.stdin);
