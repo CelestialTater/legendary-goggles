@@ -5,6 +5,7 @@ const func = require("./funcs")
 
 //Variable declaration
 var introStep = 0;
+var playingIntro = true;
 var map = [];
 var battleInterface = [];
 var inventoryInterface = [];
@@ -12,7 +13,8 @@ var run = false;
 var lastDirection = "";
 var accessingInventory = false;
 var inventory = {
-    meat:[3, "Meat", "1", "Regenerates 1 point of health."]
+    meat:[3, "Meat", "1", "Regenerates 1 point of health."],
+    goggles:[0, "Goggles", "9", "Allows you to see hidden exits. 1 use."]
 };
 var amountUsing = 1;
 var itemUsing = "Meat";
@@ -58,7 +60,6 @@ printIcon = (icon, color, bg, y, x) =>{
 drawUI = () =>{
     if (run) {
         console.clear()
-        console.log("Health: " + health)
         if (!battling && !accessingInventory) {
             for(i of map){
                 var string = ""
@@ -113,17 +114,26 @@ updateInventoryInterface = () =>{
         inventoryInterface.push("Inventory")
         inventoryInterface.push("")
         for (let item of Object.keys(inventory)) {
-            inventoryString = inventory[item.toString()][0] + "x ";
-            inventoryString = inventoryString + inventory[item.toString()][1];
-            inventoryString = inventoryString + " [" + inventory[item.toString()][2] + "]";
-            inventoryInterface.push(inventoryString)
-            inventoryInterface.push(inventory[item.toString()][3])
-            inventoryInterface.push("")
+            if (inventory[item.toString()][0] > 0) {
+                inventoryString = inventory[item.toString()][0] + "x ";
+                inventoryString = inventoryString + inventory[item.toString()][1];
+                inventoryString = inventoryString + " [" + inventory[item.toString()][2] + "]";
+                inventoryInterface.push(inventoryString)
+                inventoryInterface.push(inventory[item.toString()][3])
+                inventoryInterface.push("")
+            }
+        }
+        if (inventoryInterface.length <= 2) {
+            inventoryInterface.push("Your inventory is empty. Go find some stuff!");
         }
     } else {
         inventoryInterface.push("Using " + amountUsing + "/" + inventory[itemUsing][0] + " " + itemUsing)
         inventoryInterface.push("")
-        inventoryInterface.push("Press up and down arrows to change amount using, press enter to confirm")
+        if (inventory[itemUsing][0] > 1) {
+            inventoryInterface.push("Press up and down arrows to change amount using, press enter to confirm, press escape to cancel")
+        } else {
+            inventoryInterface.push("Press enter to confirm, press escape to cancel")
+        }
     }
 }
 
@@ -142,6 +152,14 @@ useInventory = (key, ch) =>{
             case "1":
                 if (inventory["meat"][0] >= 1) {
                     itemUsing = "meat"
+                    inventoryLevel = 1
+                    drawUI()
+                }
+                break;
+
+            case "9":
+                if (inventory["goggles"][0] >= 1) {
+                    itemUsing = "goggles"
                     inventoryLevel = 1
                     drawUI()
                 }
@@ -208,10 +226,63 @@ useItem = () =>{
             amountUsing = 0;
 
             break;
+
+        case "goggles":
+
+            revealExit()
+            inventoryLevel = 0
+            drawUI()
+            amountUsing = 0
     
         default:
             break;
     }
+}
+
+/**
+ * Generates and reveals exit
+ */
+revealExit = () =>{
+    for(var gen = 0; gen < 1; gen++){
+        let randY = Math.floor(Math.random() * 15)
+        let randX = Math.floor(Math.random() * 20)
+        if (map[randY][randX] == "@"){
+            gen--;
+        } else {
+            map[randY][randX] = chalk.bgBlack(chalk.redBright("["))
+            eventLocations.push(randY + ", " + randX)
+            eventLocations.push("[")
+        }
+    }
+    drawUI()
+}
+
+/**
+ * Handles events
+ * 
+ * @param coordY the Y coordinate of the event
+ * @param coordX the X coordinate of the event
+ */
+handleEvent = (coordY, coordX) =>{
+    if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "8") {
+        battling = true;
+        enemyY = coordY
+        enemyX = coordX
+        drawUI(); 
+        if (!enemyStarted) {
+            enemyAttack();
+        }
+    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "[") {
+        nextLevel()
+    }
+}
+
+/**
+ * Makes a new map and changes level
+ */
+nextLevel = () =>{
+    console.clear()
+    console.log("Level Complete")
 }
 
 /**
@@ -278,9 +349,13 @@ battle = (key) =>{
                             inventory["meat"][0]++;
                         }
 
+                        if (eventLocations.length <= 2) {
+                            inventory["goggles"][0]++;
+                        }
+
                         //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
                         battleEnding = true
-                        eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 1)
+                        eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 2)
                         map[enemyY][enemyX] = chalk.bgBlack(".")
                         return new Promise((resolve) => setTimeout(() => {
                             battling = false;
@@ -342,13 +417,7 @@ revealMap = (direction) => {
                         }
                     }
                 } else {
-                    battling = true;
-                    enemyY = coords[0] - 1
-                    enemyX = coords[1]
-                    drawUI(); 
-                    if (!enemyStarted) {
-                        enemyAttack();
-                    }
+                    handleEvent(coords[0] - 1, coords[1])
                 }
                 break;
             case "down":
@@ -382,13 +451,7 @@ revealMap = (direction) => {
                         
                     }
                 } else {
-                    battling = true;
-                    enemyY = coords[0] + 1
-                    enemyX = coords[1]
-                    drawUI();
-                    if (!enemyStarted) {
-                        enemyAttack();
-                    }
+                    handleEvent(coords[0] + 1, coords[1])
                 }
                 break;
             case "left":
@@ -425,13 +488,7 @@ revealMap = (direction) => {
                         }
                     }
                 } else {
-                    battling = true;
-                    enemyY = coords[0]
-                    enemyX = (coords[1] - 1)
-                    drawUI();
-                    if (!enemyStarted) {
-                        enemyAttack();
-                    }
+                    handleEvent(coords[0], coords[1] - 1)
                 }
                 break;
             case "right":
@@ -486,13 +543,7 @@ revealMap = (direction) => {
                         }
                     }
                 } else {
-                    battling = true;
-                    enemyY = coords[0]
-                    enemyX = (coords[1] + 1)
-                    drawUI();
-                    if (!enemyStarted) {
-                        enemyAttack();
-                    }
+                    handleEvent(coords[0], coords[1] + 1)
                 }
                 break;
 
@@ -516,68 +567,63 @@ revealMap = (direction) => {
  * Animation for the beginning of the game
  */
 playIntro = () =>{
-    switch (true) {
-        case (introStep == 0):
+    if(playingIntro) {
+        switch (true) {
+            case (introStep == 0):
 
-            console.clear()
-            console.log(chalk.rgb(193, 156, 0)(String.raw`  _                                    _                     `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw` | |                                  | |                    `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
-            console.log(chalk.rgb(193, 156, 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
-            console.log(chalk.rgb(193, 156, 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`                __/ |                                   __/ |`))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`               |___/                                   |___/ `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`           _____                       _                     `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`          / ____|                     | |                    `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`                          __/ |  __/ |                       `))
-            console.log(chalk.rgb(193, 156, 0)(String.raw`                         |___/  |___/                        `))
-            introStep++;
-            return new Promise((resolve) => setTimeout(() => {playIntro();}, 3000));
+                console.clear()
+                console.log(chalk.rgb(193, 156, 0)(String.raw`  _                                    _                     `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw` | |                                  | |                    `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                console.log(chalk.rgb(193, 156, 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                console.log(chalk.rgb(193, 156, 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`                __/ |                                   __/ |`))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`               |___/                                   |___/ `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`           _____                       _                     `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`          / ____|                     | |                    `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`                          __/ |  __/ |                       `))
+                console.log(chalk.rgb(193, 156, 0)(String.raw`                         |___/  |___/                        `))
+                introStep++;
+                return new Promise((resolve) => setTimeout(() => {playIntro();}, 3000));
 
-            break;
+                break;
 
-        case (introStep < 11 && introStep > 0):
-            console.clear()
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`  _                                    _                     `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |                                  | |                    `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                __/ |                                   __/ |`))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`               |___/                                   |___/ `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`           _____                       _                     `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          / ____|                     | |                    `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                          __/ |  __/ |                       `))
-            console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                         |___/  |___/                        `))
-            introStep++;
-            return new Promise((resolve) => setTimeout(() => {playIntro();}, 200));
+            case (introStep < 11 && introStep > 0):
+                console.clear()
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`  _                                    _                     `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |                                  | |                    `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                __/ |                                   __/ |`))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`               |___/                                   |___/ `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`           _____                       _                     `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          / ____|                     | |                    `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                          __/ |  __/ |                       `))
+                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                         |___/  |___/                        `))
+                introStep++;
+                return new Promise((resolve) => setTimeout(() => {playIntro();}, 200));
 
-            break;
-        case (introStep == 11):
-            
-            introStep++;
-            return new Promise((resolve) => setTimeout(() => {playIntro();}, 1750));
+                break;
+            case (introStep == 11):
+                
+                introStep++;
+                return new Promise((resolve) => setTimeout(() => {playIntro();}, 1750));
 
-            break;
+                break;
 
-        case (introStep >= 12):
+            case (introStep == 12):
 
-            console.clear()
-            console.log("\n")
-            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-            console.log("     " + chalk.rgb(193, 156, 0)("@") + "    " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
-            func.sleep(300).then(() =>{
                 console.clear()
                 console.log("\n")
                 console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
@@ -588,109 +634,46 @@ playIntro = () =>{
                     console.log("\n")
                     console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                     console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                    console.log("      " + chalk.rgb(193, 156, 0)("@") + "   " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                    console.log("     " + chalk.rgb(193, 156, 0)("@") + "    " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
                     func.sleep(300).then(() =>{
                         console.clear()
                         console.log("\n")
                         console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                         console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                        console.log("       " + chalk.rgb(193, 156, 0)("@") + "  " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                        console.log("      " + chalk.rgb(193, 156, 0)("@") + "   " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
                         func.sleep(300).then(() =>{
                             console.clear()
                             console.log("\n")
                             console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                             console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                            console.log("        " + chalk.rgb(193, 156, 0)("@") + " " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                            console.log("       " + chalk.rgb(193, 156, 0)("@") + "  " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
                             func.sleep(300).then(() =>{
                                 console.clear()
                                 console.log("\n")
                                 console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                                 console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                                console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)("@ ")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                console.log("        " + chalk.rgb(193, 156, 0)("@") + " " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
                                 func.sleep(300).then(() =>{
                                     console.clear()
                                     console.log("\n")
                                     console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                                     console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                                    console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)(" @")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                    console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)("@ ")) + " " + chalk.bgRgb(255, 255, 255)("  "))
                                     func.sleep(300).then(() =>{
                                         console.clear()
                                         console.log("\n")
                                         console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                                         console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                                        console.log("          " + chalk.bgRgb(255, 255, 255)("  ") + chalk.rgb(193, 156, 0)("@") + chalk.bgRgb(255, 255, 255)("  "))
-                                        func.sleep(150).then(() =>{
+                                        console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)(" @")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                        func.sleep(300).then(() =>{
                                             console.clear()
                                             console.log("\n")
-                                            console.log("          " + chalk.bgRgb(230, 230, 230)("     "))
-                                            console.log("          " + chalk.bgRgb(230, 230, 230)("     "))
-                                            console.log("          " + chalk.bgRgb(230, 230, 230)("  ") + chalk.rgb(173, 140, 0)("@") + chalk.bgRgb(230, 230, 230)("  "))
+                                            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                            console.log("          " + chalk.bgRgb(255, 255, 255)("  ") + chalk.rgb(193, 156, 0)("@") + chalk.bgRgb(255, 255, 255)("  "))
                                             func.sleep(150).then(() =>{
-                                                console.clear()
-                                                console.log("\n")
-                                                console.log("          " + chalk.bgRgb(205, 205, 205)("     "))
-                                                console.log("          " + chalk.bgRgb(205, 205, 205)("     "))
-                                                console.log("          " + chalk.bgRgb(205, 205, 205)("  ") + chalk.rgb(153, 125, 0)("@") + chalk.bgRgb(205, 205, 205)("  "))
-                                                func.sleep(150).then(() =>{
-                                                    console.clear()
-                                                    console.log("\n")
-                                                    console.log("          " + chalk.bgRgb(180, 180, 180)("     "))
-                                                    console.log("          " + chalk.bgRgb(180, 180, 180)("     "))
-                                                    console.log("          " + chalk.bgRgb(180, 180, 180)("  ") + chalk.rgb(133, 110, 0)("@") + chalk.bgRgb(180, 180, 180)("  "))
-                                                    func.sleep(150).then(() =>{
-                                                        console.clear()
-                                                        console.log("\n")
-                                                        console.log("          " + chalk.bgRgb(155, 155, 155)("     "))
-                                                        console.log("          " + chalk.bgRgb(155, 155, 155)("     "))
-                                                        console.log("          " + chalk.bgRgb(155, 155, 155)("  ") + chalk.rgb(113, 95, 0)("@") + chalk.bgRgb(155, 155, 155)("  "))
-                                                        func.sleep(150).then(() =>{
-                                                            console.clear()
-                                                            console.log("\n")
-                                                            console.log("          " + chalk.bgRgb(130, 130, 130)("     "))
-                                                            console.log("          " + chalk.bgRgb(130, 130, 130)("     "))
-                                                            console.log("          " + chalk.bgRgb(130, 130, 130)("  ") + chalk.rgb(93, 80, 0)("@") + chalk.bgRgb(130, 130, 130)("  "))
-                                                            func.sleep(150).then(() =>{
-                                                                console.clear()
-                                                                console.log("\n")
-                                                                console.log("          " + chalk.bgRgb(105, 105, 105)("     "))
-                                                                console.log("          " + chalk.bgRgb(105, 105, 105)("     "))
-                                                                console.log("          " + chalk.bgRgb(105, 105, 105)("  ") + chalk.rgb(73, 65, 0)("@") + chalk.bgRgb(105, 105, 105)("  "))
-                                                                func.sleep(150).then(() =>{
-                                                                    console.clear()
-                                                                    console.log("\n")
-                                                                    console.log("          " + chalk.bgRgb(80, 80, 80)("     "))
-                                                                    console.log("          " + chalk.bgRgb(80, 80, 80)("     "))
-                                                                    console.log("          " + chalk.bgRgb(80, 80, 80)("  ") + chalk.rgb(53, 50, 0)("@") + chalk.bgRgb(80, 80, 80)("  "))
-                                                                    func.sleep(150).then(() =>{
-                                                                        console.clear()
-                                                                        console.log("\n")
-                                                                        console.log("          " + chalk.bgRgb(55, 55, 55)("     "))
-                                                                        console.log("          " + chalk.bgRgb(55, 55, 55)("     "))
-                                                                        console.log("          " + chalk.bgRgb(55, 55, 55)("  ") + chalk.rgb(33, 33, 0)("@") + chalk.bgRgb(55, 55, 55)("  "))
-                                                                        func.sleep(150).then(() =>{
-                                                                            console.clear()
-                                                                            console.log("\n")
-                                                                            console.log("          " + chalk.bgRgb(30, 30, 30)("     "))
-                                                                            console.log("          " + chalk.bgRgb(30, 30, 30)("     "))
-                                                                            console.log("          " + chalk.bgRgb(30, 30, 30)("  ") + chalk.rgb(13, 15, 0)("@") + chalk.bgRgb(30, 30, 30)("  "))
-                                                                            func.sleep(150).then(() =>{
-                                                                                console.clear()
-                                                                                console.log("\n")
-                                                                                console.log("          " + chalk.bgBlack("     "))
-                                                                                console.log("          " + chalk.bgBlack("     "))
-                                                                                console.log("          " + chalk.bgBlack("  ") + chalk.black("@") + chalk.bgBlack("  "))
-                                                                                func.sleep(150).then(() =>{
-                                                                                    run = true;
-                                                                                    revealMap("right");
-                                                                                })
-                                                                            })
-                                                                        })
-                                                                    })
-                                                                })
-                                                            })
-                                                        })
-                                                    })
-                                                })
+                                                introStep++;
+                                                playIntro();
                                             })
                                         })
                                     })
@@ -699,15 +682,37 @@ playIntro = () =>{
                         })
                     })
                 })
-            })
 
-            break;
+                break;
 
-        default:
-            console.log("Error: Invalid introStep of " + introStep);
-            break;
+                case (introStep >= 13 && introStep <= 22):
+
+                    var fade = (22 - introStep) / 10;
+                    
+                    console.clear()
+                    console.log("\n")
+                    console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("     "))
+                    console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("     "))
+                    console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("  ") + chalk.rgb(173 * fade, 140 * fade, 0)("@") + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("  "))
+                    introStep++;
+
+                    return new Promise((resolve) => setTimeout(() => {playIntro();}, 150));
+
+                case (introStep == 23):
+
+                    return new Promise((resolve) => setTimeout(() => {
+                        run = true;
+                        playingIntro = false;
+                        revealMap("right");
+                    }, 150));
+
+                    break;
+
+            default:
+                console.log("Error: Invalid introStep of " + introStep);
+                break;
+        }
     }
-    
 }
 
 
@@ -734,7 +739,7 @@ printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
-    if (run) {
+    if (run && !playingIntro) {
         if (!battling && !accessingInventory) {
             revealMap(key.name)
             //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
@@ -750,6 +755,12 @@ process.stdin.on('keypress', function (ch, key) {
             useInventory(key, ch)
         } else {
             drawUI();
+        }
+    } else if (playingIntro) {
+        if (key.name == "space") {
+            playingIntro = false;
+            run = true;
+            revealMap("right");
         }
     }
     //stops game.

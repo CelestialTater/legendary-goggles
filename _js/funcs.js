@@ -62,7 +62,6 @@ module.exports = {
                     }else{
                         map[randY][randX] = "8"
                     }
-                
                 }
                 return map
             default:
@@ -74,14 +73,15 @@ module.exports = {
      * @param map the map to use.
      */
     getEvents: function(map){
-        var eventLocations = []
+        var eventLocations = [];
         for(c in map){
             for (l in map[c]){
                 if(map[c][l] == "8"){
                     eventLocations.push(c + ", " + l)
+                    eventLocations.push("8")
                 }
             }
         }
-        return eventLocations
+        return eventLocations;
     }
 }
