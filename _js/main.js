@@ -224,6 +224,7 @@ useItem = () =>{
             }
 
             amountUsing = 0;
+            healthBar = func.generateHealthBar(maxHealth, health);
 
             break;
 
@@ -289,7 +290,6 @@ nextLevel = () =>{
  * Sets the enemy to attack after a certain amount of time
  */
 enemyAttack = () =>{
-    healthBar = func.generateHealthBar(maxHealth, health);
     enemyStarted = true;
     return new Promise((resolve) => setTimeout(() => {
 
@@ -332,6 +332,8 @@ enemyAttack = () =>{
  * @param key key that triggered battle function
  */
 battle = (key) =>{
+    healthBar = func.generateHealthBar(maxHealth, health);
+    drawUI();
     if (!battleEnding) {
         switch (key) {
             case "space":
