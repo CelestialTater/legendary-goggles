@@ -40,11 +40,12 @@ module.exports = {
      * Generates a map with events in random positions
      * @param floor (currently no use, will affect generation in future). defaults to 1
      */
-    generateMap: function(floor = 1){
+    generateMap: function(floor = 0){
         var map = []
         //TODO: Add floors and differences between floors
         switch(floor){
-            case 1:
+
+            case 0:
                 maxEnemyHealth = 5
                 enemyHealth = maxEnemyHealth
                 for(var arr = 0; arr < 15; arr++){
@@ -64,6 +65,28 @@ module.exports = {
                     }
                 }
                 return map
+
+            case 1:
+                maxEnemyHealth = 7
+                enemyHealth = maxEnemyHealth
+                for(var arr = 0; arr < 30; arr++){
+                    var str = []
+                    for(var chr = 0; chr < 40; chr++){
+                        str.push(".")
+                    }
+                    map.push(str);
+                }
+                for(var scc = 0; scc < 25; scc++){
+                    let randY = Math.floor(Math.random() * 30)
+                    let randX = Math.floor(Math.random() * 40)
+                    if (map[randY][randX] == "8"){
+                        scc--;
+                    }else{
+                        map[randY][randX] = "8"
+                    }
+                }
+                return map
+
             default:
                 console.log("Error: generateMap invalid input")
         }

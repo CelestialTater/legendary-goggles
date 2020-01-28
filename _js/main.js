@@ -7,6 +7,8 @@ const func = require("./funcs")
 var introStep = 0;
 var playingIntro = true;
 var map = [];
+var floor = 0;
+var highestFloor = 1;
 var battleInterface = [];
 var inventoryInterface = [];
 var run = false;
@@ -14,7 +16,9 @@ var lastDirection = "";
 var accessingInventory = false;
 var inventory = {
     meat:[3, "Meat", "1", "Regenerates 1 point of health."],
-    goggles:[0, "Goggles", "9", "Allows you to see hidden exits. 1 use."]
+    goggles:[0, "Goggles", "8", "Reveals entire map. 1 use."],
+    epicGoggles:[0, "Epic Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
+    key:[0, "Key", null, "Opens a door"]
 };
 var amountUsing = 1;
 var itemUsing = "Meat";
@@ -115,9 +119,11 @@ updateInventoryInterface = () =>{
         inventoryInterface.push("")
         for (let item of Object.keys(inventory)) {
             if (inventory[item.toString()][0] > 0) {
-                inventoryString = inventory[item.toString()][0] + "x ";
-                inventoryString = inventoryString + inventory[item.toString()][1];
-                inventoryString = inventoryString + " [" + inventory[item.toString()][2] + "]";
+                inventoryString = inventory[item.toString()][0] + "x "
+                inventoryString = inventoryString + inventory[item.toString()][1]
+                if(inventory[item.toString()][2] != null) {
+                    inventoryString = inventoryString + " [" + inventory[item.toString()][2] + "]";
+                }
                 inventoryInterface.push(inventoryString)
                 inventoryInterface.push(inventory[item.toString()][3])
                 inventoryInterface.push("")
@@ -127,7 +133,7 @@ updateInventoryInterface = () =>{
             inventoryInterface.push("Your inventory is empty. Go find some stuff!");
         }
     } else {
-        inventoryInterface.push("Using " + amountUsing + "/" + inventory[itemUsing][0] + " " + itemUsing)
+        inventoryInterface.push("Using " + amountUsing + "/" + inventory[itemUsing][0] + " " + inventory[itemUsing][1].toLowerCase());
         inventoryInterface.push("")
         if (inventory[itemUsing][0] > 1) {
             inventoryInterface.push("Press up and down arrows to change amount using, press enter to confirm, press escape to cancel")
@@ -158,8 +164,8 @@ useInventory = (key, ch) =>{
                 break;
 
             case "9":
-                if (inventory["goggles"][0] >= 1) {
-                    itemUsing = "goggles"
+                if (inventory["epicGoggles"][0] >= 1) {
+                    itemUsing = "epicGoggles"
                     inventoryLevel = 1
                     drawUI()
                 }
@@ -197,6 +203,7 @@ useInventory = (key, ch) =>{
 
             case "escape":
                 inventoryLevel = 0;
+                amountUsing = 1;
                 drawUI()
         
             default:
@@ -223,17 +230,17 @@ useItem = () =>{
                 console.log(chalk.magentaBright("What a waste of food..."))
             }
 
-            amountUsing = 0;
+            amountUsing = 1;
             healthBar = func.generateHealthBar(maxHealth, health);
 
             break;
 
-        case "goggles":
+        case "epicGoggles":
 
-            revealExit()
+            reveal()
             inventoryLevel = 0
             drawUI()
-            amountUsing = 0
+            amountUsing = 1
     
         default:
             break;
@@ -241,19 +248,61 @@ useItem = () =>{
 }
 
 /**
- * Generates and reveals exit
+ * Generates and reveals special tiles
  */
-revealExit = () =>{
-    for(var gen = 0; gen < 1; gen++){
-        let randY = Math.floor(Math.random() * 15)
-        let randX = Math.floor(Math.random() * 20)
-        if (map[randY][randX] == "@"){
-            gen--;
-        } else {
-            map[randY][randX] = chalk.bgBlack(chalk.redBright("["))
-            eventLocations.push(randY + ", " + randX)
-            eventLocations.push("[")
-        }
+reveal = () =>{
+    switch (itemUsing) {
+
+        case "goggles":
+
+            //Creates and reveals exit
+            for(var gen = 0; gen < 1; gen++){
+                let randY = Math.floor(Math.random() * map.length)
+                let randX = Math.floor(Math.random() * map[0].length)
+                if (map[randY][randX] == "@" || map[randY][randX] == "~"){
+                    gen--;
+                } else {
+                    map[randY][randX] = chalk.bgBlack(chalk.redBright("["))
+                    eventLocations.push(randY + ", " + randX)
+                    eventLocations.push("[")
+                }
+            }
+
+        case "epicGoggles":
+
+            //Floor specific items
+            for (var gen = 0; gen < 1; gen++) {
+                if (floor == 0) {
+                    let randY = Math.floor(Math.random() * map.length)
+                    let randX = Math.floor(Math.random() * map[0].length)
+                    if (map[randY][randX] == "@"){
+                        gen--;
+                    } else {
+                        map[randY][randX] = chalk.bgBlack(chalk.rgb(51, 51, 255)("~"))
+                        eventLocations.push(randY + ", " + randX)
+                        eventLocations.push("~")
+                    }
+                }
+            }
+
+            //Creates and reveals exit
+            for(var gen = 0; gen < 1; gen++){
+                let randY = Math.floor(Math.random() * map.length)
+                let randX = Math.floor(Math.random() * map[0].length)
+                if (map[randY][randX] == "@" || map[randY][randX] == "~"){
+                    gen--;
+                } else {
+                    map[randY][randX] = chalk.bgBlack(chalk.redBright("["))
+                    eventLocations.push(randY + ", " + randX)
+                    eventLocations.push("[")
+                }
+            }
+
+            break;
+
+        default:
+            break;
+
     }
     drawUI()
 }
@@ -273,7 +322,12 @@ handleEvent = (coordY, coordX) =>{
         if (!enemyStarted) {
             enemyAttack();
         }
+    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "~") {
+        inventory["key"][0]++;
+        eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
+        revealMap(lastDirection);
     } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "[") {
+        eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
         nextLevel()
     }
 }
@@ -282,8 +336,16 @@ handleEvent = (coordY, coordX) =>{
  * Makes a new map and changes level
  */
 nextLevel = () =>{
+    floor++;
     console.clear()
-    console.log("Level Complete")
+    if (floor <= highestFloor) {
+        generateMap()
+    } else {
+        //Ends game
+        console.log("Congratulations! You won!");
+        introStep = 0;
+        return new Promise((resolve) => setTimeout(() => {playIntro();}, 5000));     
+    }
 }
 
 /**
@@ -347,12 +409,12 @@ battle = (key) =>{
                         drawUI()
 
                         //Give items to player
-                        if (Math.floor(Math.random() * 5) != 4) {
+                        if (Math.floor(Math.random() * 4) != 3) {
                             inventory["meat"][0]++;
                         }
 
-                        if (eventLocations.length <= 2) {
-                            inventory["goggles"][0]++;
+                        if (eventLocations.length <= 2 && floor == 0) {
+                            inventory["epicGoggles"][0]++;
                         }
 
                         //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
@@ -597,34 +659,55 @@ playIntro = () =>{
 
             case (introStep < 11 && introStep > 0):
                 console.clear()
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`  _                                    _                     `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |                                  | |                    `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                __/ |                                   __/ |`))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`               |___/                                   |___/ `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`           _____                       _                     `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          / ____|                     | |                    `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                          __/ |  __/ |                       `))
-                console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                         |___/  |___/                        `))
-                introStep++;
+
+                if (introStep != 10) {
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`  _                                    _                     `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |                                  | |                    `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                __/ |                                   __/ |`))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`               |___/                                   |___/ `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`           _____                       _                     `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          / ____|                     | |                    `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                          __/ |  __/ |                       `))
+                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                         |___/  |___/                        `))
+                    introStep++;
+                } else {
+                    console.log(chalk.black(String.raw`  _                                    _                     `))
+                    console.log(chalk.black(String.raw` | |                                  | |                    `))
+                    console.log(chalk.black(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                    console.log(chalk.black(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                    console.log(chalk.black(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                    console.log(chalk.black(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                    console.log(chalk.black(String.raw`                __/ |                                   __/ |`))
+                    console.log(chalk.black(String.raw`               |___/                                   |___/ `))
+                    console.log(chalk.black(String.raw`           _____                       _                     `))
+                    console.log(chalk.black(String.raw`          / ____|                     | |                    `))
+                    console.log(chalk.black(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                    console.log(chalk.black(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                    console.log(chalk.black(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                    console.log(chalk.black(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                    console.log(chalk.black(String.raw`                          __/ |  __/ |                       `))
+                    console.log(chalk.black(String.raw`                         |___/  |___/                        `))
+                    introStep++;
+                }
                 return new Promise((resolve) => setTimeout(() => {playIntro();}, 200));
 
                 break;
-            case (introStep == 11):
+            case (introStep == 11 && floor == 0):
                 
                 introStep++;
                 return new Promise((resolve) => setTimeout(() => {playIntro();}, 1750));
 
                 break;
 
-            case (introStep == 12):
+            case (introStep == 12 && floor == 0):
 
                 console.clear()
                 console.log("\n")
@@ -687,7 +770,7 @@ playIntro = () =>{
 
                 break;
 
-                case (introStep >= 13 && introStep <= 22):
+                case (introStep >= 13 && introStep <= 22 && floor == 0):
 
                     var fade = (22 - introStep) / 10;
                     
@@ -700,7 +783,7 @@ playIntro = () =>{
 
                     return new Promise((resolve) => setTimeout(() => {playIntro();}, 150));
 
-                case (introStep == 23):
+                case (introStep == 23 && floor == 0):
 
                     return new Promise((resolve) => setTimeout(() => {
                         run = true;
@@ -710,8 +793,17 @@ playIntro = () =>{
 
                     break;
 
+                case (introStep == 11 && floor != 0):
+
+                    //Ends program
+
+                    run = false;
+                    playingIntro = false;
+
+                    break;
+
             default:
-                console.log("Error: Invalid introStep of " + introStep);
+                console.log("Error: Invalid introStep of " + introStep + " for floor " + floor);
                 break;
         }
     }
@@ -719,7 +811,7 @@ playIntro = () =>{
 
 
 playIntro()
-var map = func.generateMap()
+var map = func.generateMap(floor)
 var eventLocations = func.getEvents(map)
 var healthBar = func.generateHealthBar(maxHealth)
 var enemyHealthBar = func.generateHealthBar(maxEnemyHealth)
