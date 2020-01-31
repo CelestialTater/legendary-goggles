@@ -38,7 +38,7 @@ module.exports = {
     },
     /**
      * Generates a map with events in random positions
-     * @param floor (currently no use, will affect generation in future). defaults to 1
+     * @param floor which map to generate. defaults to 0
      */
     generateMap: function(floor = 0){
         var map = []

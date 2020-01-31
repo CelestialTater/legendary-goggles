@@ -16,8 +16,8 @@ var lastDirection = "";
 var accessingInventory = false;
 var inventory = {
     meat:[3, "Meat", "1", "Regenerates 1 point of health."],
-    goggles:[0, "Goggles", "8", "Reveals entire map. 1 use."],
-    epicGoggles:[0, "Epic Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
+    goggles:[1, "Goggles", "8", "Reveals entire map. 1 use."],
+    rareGoggles:[0, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
     key:[0, "Key", null, "Opens a door"]
 };
 var amountUsing = 1;
@@ -38,7 +38,7 @@ var miss = "    ";
 var enemyMiss = "";
 
 //array to hold special characters. store the special character, then the desired color at the index after
-var specialChars = ["8", chalk.blueBright]
+var specialChars = ["8", chalk.blueBright, "[", chalk.redBright, "~", chalk.rgb(51, 51, 255)]
 
 /**
  * Prints an icon to the map
@@ -163,9 +163,17 @@ useInventory = (key, ch) =>{
                 }
                 break;
 
+            case "8":
+                if (inventory["goggles"][0] >= 1) {
+                    itemUsing = "goggles"
+                    inventoryLevel = 1
+                    drawUI()
+                }
+                break;
+
             case "9":
-                if (inventory["epicGoggles"][0] >= 1) {
-                    itemUsing = "epicGoggles"
+                if (inventory["rareGoggles"][0] >= 1) {
+                    itemUsing = "rareGoggles"
                     inventoryLevel = 1
                     drawUI()
                 }
@@ -235,12 +243,23 @@ useItem = () =>{
 
             break;
 
-        case "epicGoggles":
+        case "goggles":
 
             reveal()
             inventoryLevel = 0
             drawUI()
             amountUsing = 1
+
+            break;
+
+        case "rareGoggles":
+
+            reveal()
+            inventoryLevel = 0
+            drawUI()
+            amountUsing = 1
+
+            break;
     
         default:
             break;
@@ -248,34 +267,48 @@ useItem = () =>{
 }
 
 /**
- * Generates and reveals special tiles
+ * Generates and reveals special tiles, or automatically reveals the entire map
  */
 reveal = () =>{
     switch (itemUsing) {
 
         case "goggles":
 
-            //Creates and reveals exit
-            for(var gen = 0; gen < 1; gen++){
-                let randY = Math.floor(Math.random() * map.length)
-                let randX = Math.floor(Math.random() * map[0].length)
-                if (map[randY][randX] == "@" || map[randY][randX] == "~"){
-                    gen--;
-                } else {
-                    map[randY][randX] = chalk.bgBlack(chalk.redBright("["))
-                    eventLocations.push(randY + ", " + randX)
-                    eventLocations.push("[")
-                }
-            }
+            //WARNING: THE FOLLOWING CODE CAUSES A MEMORY LEAK!!!
+            //
+            //           DO NOT RUN UNLESS FIXED!!!
 
-        case "epicGoggles":
+            
+            //Reveals entire map
+            /* var yRevealing = 0;
+            var xRevealing = 0;
+            for(i of map) {
+                xCoord = 0;
+
+
+                for(o of i) {
+
+                    
+                    //THIS CODE GETS STUCK RUNNING THIS FOR LOOP
+
+                    printIcon(o, chalk.green, chalk.bgBlack, yRevealing, xRevealing)
+                    xRevealing++;
+                }
+
+
+                yRevealing++;
+            }
+            drawUI(); */
+            break;
+
+        case "rareGoggles":
 
             //Floor specific items
             for (var gen = 0; gen < 1; gen++) {
                 if (floor == 0) {
                     let randY = Math.floor(Math.random() * map.length)
                     let randX = Math.floor(Math.random() * map[0].length)
-                    if (map[randY][randX] == "@"){
+                    if (map[randY][randX] != "."){
                         gen--;
                     } else {
                         map[randY][randX] = chalk.bgBlack(chalk.rgb(51, 51, 255)("~"))
@@ -289,7 +322,7 @@ reveal = () =>{
             for(var gen = 0; gen < 1; gen++){
                 let randY = Math.floor(Math.random() * map.length)
                 let randX = Math.floor(Math.random() * map[0].length)
-                if (map[randY][randX] == "@" || map[randY][randX] == "~"){
+                if (map[randY][randX] != "."){
                     gen--;
                 } else {
                     map[randY][randX] = chalk.bgBlack(chalk.redBright("["))
@@ -414,7 +447,7 @@ battle = (key) =>{
                         }
 
                         if (eventLocations.length <= 2 && floor == 0) {
-                            inventory["epicGoggles"][0]++;
+                            inventory["rareGoggles"][0]++;
                         }
 
                         //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
