@@ -86,7 +86,6 @@ module.exports = {
                         map[randY][randX] = "8"
                     }
                 }
-                console.log
                 return map
 
             default:

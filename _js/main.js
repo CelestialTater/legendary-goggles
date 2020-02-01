@@ -16,10 +16,10 @@ var run = false;
 var lastDirection = "";
 var accessingInventory = false;
 var inventory = {
-    meat:[3, "Meat", "1", "Regenerates 1 point of health."],
-    goggles:[0, "Goggles", "8", "Reveals entire map. 1 use."],
-    rareGoggles:[1, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
-    key:[0, "Key", null, "Opens a door"]
+    meat:[99, "Meat", "1", "Regenerates 1 point of health."],
+    goggles:[99, "Goggles", "8", "Reveals entire map. 1 use."],
+    rareGoggles:[99, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
+    key:[99, "Key", null, "Opens a door"]
 };
 var amountUsing = 1;
 var itemUsing = "Meat";
@@ -359,20 +359,21 @@ nextLevel = () =>{
     console.clear()
     if (floor <= highestFloor) {
         map = func.generateMap(floor);
+        eventLocations = func.getEvents(map);
         let randomY = Math.floor(Math.random() * map.length - 1)
-    let randomX = Math.floor(Math.random() * map[0].length - 1)
-    if(randomY <= 0){
-        randomY++
-    }
-    if(randomX <= 0){
-        randomX++
-    }
-    if(randomX == 19){
-        randomX--
-    }
-    coords = [randomY, randomX]
-    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-        drawUI();
+        let randomX = Math.floor(Math.random() * map[0].length - 1)
+        if(randomY <= 0){
+            randomY++
+        }
+        if(randomX <= 0){
+            randomX++
+        }
+        if(randomX == map.length - 1){
+            randomX--
+        }
+        coords = [randomY, randomX]
+        printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+        revealMap("right");
     } else {
         //Ends game
         console.log("Congratulations! You won!");
@@ -447,6 +448,10 @@ battle = (key) =>{
                         }
 
                         if (eventLocations.length <= 2 && floor == 0) {
+                            inventory["rareGoggles"][0]++;
+                        }
+
+                        if (eventLocations.length <= 2 && floor == 1) {
                             inventory["rareGoggles"][0]++;
                         }
 
