@@ -1,7 +1,10 @@
 //Imports
 const chalk = require("chalk")
+const window = require("window-size")
 const keypress = require("keypress")
 const func = require("./funcs")
+
+var x = 0;
 
 //Variable declaration
 var introStep = 0;
@@ -17,7 +20,7 @@ var accessingInventory = false;
 var inventory = {
     meat:[3, "Meat", "1", "Regenerates 1 point of health."],
     goggles:[0, "Goggles", "8", "Reveals entire map. 1 use."],
-    rareGoggles:[0, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
+    rareGoggles:[1, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
     key:[0, "Key", null, "Opens a door"]
 };
 var amountUsing = 1;
@@ -285,12 +288,13 @@ reveal = () =>{
 
         case "rareGoggles":
 
+
             //Floor specific items
             for (var gen = 0; gen < 1; gen++) {
                 if (floor == 0) {
                     let randY = Math.floor(Math.random() * map.length)
                     let randX = Math.floor(Math.random() * map[0].length)
-                    if (map[randY][randX] != "."){
+                    if (map[randY][randX] == "@"){
                         gen--;
                     } else {
                         map[randY][randX] = chalk.bgBlack(chalk.rgb(51, 51, 255)("~"))
@@ -300,11 +304,12 @@ reveal = () =>{
                 }
             }
 
+
             //Creates and reveals exit
             for(var gen = 0; gen < 1; gen++){
                 let randY = Math.floor(Math.random() * map.length)
                 let randX = Math.floor(Math.random() * map[0].length)
-                if (map[randY][randX] != "."){
+                if (map[randY][randX] == "@" || map[randY][randX] == "~"){
                     gen--;
                 } else {
                     map[randY][randX] = chalk.bgBlack(chalk.redBright("["))
@@ -312,6 +317,7 @@ reveal = () =>{
                     eventLocations.push("[")
                 }
             }
+
 
             break;
 
@@ -354,7 +360,21 @@ nextLevel = () =>{
     floor++;
     console.clear()
     if (floor <= highestFloor) {
-        generateMap()
+        map = func.generateMap(floor);
+        let randomY = Math.floor(Math.random() * map.length - 1)
+    let randomX = Math.floor(Math.random() * map[0].length - 1)
+    if(randomY <= 0){
+        randomY++
+    }
+    if(randomX <= 0){
+        randomX++
+    }
+    if(randomX == 19){
+        randomX--
+    }
+    coords = [randomY, randomX]
+    printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+        drawUI();
     } else {
         //Ends game
         console.log("Congratulations! You won!");
@@ -646,90 +666,85 @@ revealMap = (direction) => {
  * Animation for the beginning of the game
  */
 playIntro = () =>{
-    if(playingIntro) {
-        switch (true) {
-            case (introStep == 0):
+    if (window.get().height != 30 && window.get().width != 120) {
+        if(playingIntro) {
+            switch (true) {
+                case (introStep == 0):
 
-                console.clear()
-                console.log(chalk.rgb(193, 156, 0)(String.raw`  _                                    _                     `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw` | |                                  | |                    `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
-                console.log(chalk.rgb(193, 156, 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
-                console.log(chalk.rgb(193, 156, 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`                __/ |                                   __/ |`))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`               |___/                                   |___/ `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`           _____                       _                     `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`          / ____|                     | |                    `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`                          __/ |  __/ |                       `))
-                console.log(chalk.rgb(193, 156, 0)(String.raw`                         |___/  |___/                        `))
-                introStep++;
-                return new Promise((resolve) => setTimeout(() => {playIntro();}, 3000));
-
-                break;
-
-            case (introStep < 11 && introStep > 0):
-                console.clear()
-
-                if (introStep != 10) {
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`  _                                    _                     `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |                                  | |                    `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                __/ |                                   __/ |`))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`               |___/                                   |___/ `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`           _____                       _                     `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          / ____|                     | |                    `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                          __/ |  __/ |                       `))
-                    console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                         |___/  |___/                        `))
+                    console.clear()
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`  _                                    _                     `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` | |                                  | |                    `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`                __/ |                                   __/ |`))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`               |___/                                   |___/ `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`           _____                       _                     `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`          / ____|                     | |                    `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`                          __/ |  __/ |                       `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`                         |___/  |___/                        `))
                     introStep++;
-                } else {
-                    console.log(chalk.black(String.raw`  _                                    _                     `))
-                    console.log(chalk.black(String.raw` | |                                  | |                    `))
-                    console.log(chalk.black(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
-                    console.log(chalk.black(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
-                    console.log(chalk.black(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
-                    console.log(chalk.black(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
-                    console.log(chalk.black(String.raw`                __/ |                                   __/ |`))
-                    console.log(chalk.black(String.raw`               |___/                                   |___/ `))
-                    console.log(chalk.black(String.raw`           _____                       _                     `))
-                    console.log(chalk.black(String.raw`          / ____|                     | |                    `))
-                    console.log(chalk.black(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
-                    console.log(chalk.black(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
-                    console.log(chalk.black(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
-                    console.log(chalk.black(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
-                    console.log(chalk.black(String.raw`                          __/ |  __/ |                       `))
-                    console.log(chalk.black(String.raw`                         |___/  |___/                        `))
+                    return new Promise((resolve) => setTimeout(() => {playIntro();}, 3000));
+
+                    break;
+
+                case (introStep < 11 && introStep > 0):
+                    console.clear()
+
+                    if (introStep != 10) {
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`  _                                    _                     `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |                                  | |                    `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                __/ |                                   __/ |`))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`               |___/                                   |___/ `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`           _____                       _                     `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          / ____|                     | |                    `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                          __/ |  __/ |                       `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                         |___/  |___/                        `))
+                        introStep++;
+                    } else {
+                        console.log(chalk.black(String.raw`  _                                    _                     `))
+                        console.log(chalk.black(String.raw` | |                                  | |                    `))
+                        console.log(chalk.black(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                        console.log(chalk.black(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                        console.log(chalk.black(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                        console.log(chalk.black(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                        console.log(chalk.black(String.raw`                __/ |                                   __/ |`))
+                        console.log(chalk.black(String.raw`               |___/                                   |___/ `))
+                        console.log(chalk.black(String.raw`           _____                       _                     `))
+                        console.log(chalk.black(String.raw`          / ____|                     | |                    `))
+                        console.log(chalk.black(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                        console.log(chalk.black(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                        console.log(chalk.black(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                        console.log(chalk.black(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                        console.log(chalk.black(String.raw`                          __/ |  __/ |                       `))
+                        console.log(chalk.black(String.raw`                         |___/  |___/                        `))
+                        introStep++;
+                    }
+                    return new Promise((resolve) => setTimeout(() => {playIntro();}, 200));
+
+                    break;
+                case (introStep == 11 && floor == 0):
+                    
                     introStep++;
-                }
-                return new Promise((resolve) => setTimeout(() => {playIntro();}, 200));
+                    return new Promise((resolve) => setTimeout(() => {playIntro();}, 1750));
 
-                break;
-            case (introStep == 11 && floor == 0):
-                
-                introStep++;
-                return new Promise((resolve) => setTimeout(() => {playIntro();}, 1750));
+                    break;
 
-                break;
+                case (introStep == 12 && floor == 0):
 
-            case (introStep == 12 && floor == 0):
-
-                console.clear()
-                console.log("\n")
-                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                console.log("     " + chalk.rgb(193, 156, 0)("@") + "    " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
-                func.sleep(300).then(() =>{
                     console.clear()
                     console.log("\n")
                     console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
@@ -740,40 +755,47 @@ playIntro = () =>{
                         console.log("\n")
                         console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                         console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                        console.log("      " + chalk.rgb(193, 156, 0)("@") + "   " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                        console.log("     " + chalk.rgb(193, 156, 0)("@") + "    " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
                         func.sleep(300).then(() =>{
                             console.clear()
                             console.log("\n")
                             console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                             console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                            console.log("       " + chalk.rgb(193, 156, 0)("@") + "  " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                            console.log("      " + chalk.rgb(193, 156, 0)("@") + "   " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
                             func.sleep(300).then(() =>{
                                 console.clear()
                                 console.log("\n")
                                 console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                                 console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                                console.log("        " + chalk.rgb(193, 156, 0)("@") + " " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                console.log("       " + chalk.rgb(193, 156, 0)("@") + "  " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
                                 func.sleep(300).then(() =>{
                                     console.clear()
                                     console.log("\n")
                                     console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                                     console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                                    console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)("@ ")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                    console.log("        " + chalk.rgb(193, 156, 0)("@") + " " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
                                     func.sleep(300).then(() =>{
                                         console.clear()
                                         console.log("\n")
                                         console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                                         console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                                        console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)(" @")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                        console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)("@ ")) + " " + chalk.bgRgb(255, 255, 255)("  "))
                                         func.sleep(300).then(() =>{
                                             console.clear()
                                             console.log("\n")
                                             console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
                                             console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
-                                            console.log("          " + chalk.bgRgb(255, 255, 255)("  ") + chalk.rgb(193, 156, 0)("@") + chalk.bgRgb(255, 255, 255)("  "))
-                                            func.sleep(150).then(() =>{
-                                                introStep++;
-                                                playIntro();
+                                            console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)(" @")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                            func.sleep(300).then(() =>{
+                                                console.clear()
+                                                console.log("\n")
+                                                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                                console.log("          " + chalk.bgRgb(255, 255, 255)("  ") + chalk.rgb(193, 156, 0)("@") + chalk.bgRgb(255, 255, 255)("  "))
+                                                func.sleep(150).then(() =>{
+                                                    introStep++;
+                                                    playIntro();
+                                                })
                                             })
                                         })
                                     })
@@ -781,46 +803,53 @@ playIntro = () =>{
                             })
                         })
                     })
-                })
 
-                break;
+                    break;
 
-                case (introStep >= 13 && introStep <= 22 && floor == 0):
+                    case (introStep >= 13 && introStep <= 22 && floor == 0):
 
-                    var fade = (22 - introStep) / 10;
-                    
-                    console.clear()
-                    console.log("\n")
-                    console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("     "))
-                    console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("     "))
-                    console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("  ") + chalk.rgb(173 * fade, 140 * fade, 0)("@") + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("  "))
-                    introStep++;
+                        var fade = (22 - introStep) / 10;
+                        
+                        console.clear()
+                        console.log("\n")
+                        console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("     "))
+                        console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("     "))
+                        console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("  ") + chalk.rgb(173 * fade, 140 * fade, 0)("@") + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("  "))
+                        introStep++;
 
-                    return new Promise((resolve) => setTimeout(() => {playIntro();}, 150));
+                        return new Promise((resolve) => setTimeout(() => {playIntro();}, 150));
 
-                case (introStep == 23 && floor == 0):
+                    case (introStep == 23 && floor == 0):
 
-                    return new Promise((resolve) => setTimeout(() => {
-                        run = true;
+                        return new Promise((resolve) => setTimeout(() => {
+                            run = true;
+                            playingIntro = false;
+                            revealMap("right");
+                        }, 150));
+
+                        break;
+
+                    case (introStep == 11 && floor != 0):
+
+                        //Ends program
+
+                        run = false;
                         playingIntro = false;
-                        revealMap("right");
-                    }, 150));
 
+                        break;
+
+                default:
+                    console.log("Error: Invalid introStep of " + introStep + " for floor " + floor);
                     break;
-
-                case (introStep == 11 && floor != 0):
-
-                    //Ends program
-
-                    run = false;
-                    playingIntro = false;
-
-                    break;
-
-            default:
-                console.log("Error: Invalid introStep of " + introStep + " for floor " + floor);
-                break;
+            }
         }
+    } else {
+        console.clear();
+        console.log("Please fullscreen this window");
+        console.log(window.get())
+        x++;
+        console.log(x)
+        return new Promise((resolve) => setTimeout(() => {playIntro();}, 50));
     }
 }
 
@@ -841,7 +870,7 @@ if(randomX <= 0){
 if(randomX == 19){
     randomX--
 }
-let coords = [randomY, randomX]
+var coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 
 //Key listeners and coordinate updates based on the movement.

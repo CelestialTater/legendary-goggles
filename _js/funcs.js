@@ -67,6 +67,7 @@ module.exports = {
                 return map
 
             case 1:
+                console.log("Generating floor 1")
                 maxEnemyHealth = 7
                 enemyHealth = maxEnemyHealth
                 for(var arr = 0; arr < 30; arr++){
@@ -85,6 +86,7 @@ module.exports = {
                         map[randY][randX] = "8"
                     }
                 }
+                console.log
                 return map
 
             default:
