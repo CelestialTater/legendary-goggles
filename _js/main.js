@@ -16,7 +16,7 @@ var lastDirection = "";
 var accessingInventory = false;
 var inventory = {
     meat:[3, "Meat", "1", "Regenerates 1 point of health."],
-    goggles:[1, "Goggles", "8", "Reveals entire map. 1 use."],
+    goggles:[0, "Goggles", "8", "Reveals entire map. 1 use."],
     rareGoggles:[0, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
     key:[0, "Key", null, "Opens a door"]
 };
@@ -273,32 +273,14 @@ reveal = () =>{
     switch (itemUsing) {
 
         case "goggles":
-
-            //WARNING: THE FOLLOWING CODE CAUSES A MEMORY LEAK!!!
-            //
-            //           DO NOT RUN UNLESS FIXED!!!
-
             
             //Reveals entire map
-            /* var yRevealing = 0;
-            var xRevealing = 0;
-            for(i of map) {
-                xCoord = 0;
-
-
-                for(o of i) {
-
-                    
-                    //THIS CODE GETS STUCK RUNNING THIS FOR LOOP
-
-                    printIcon(o, chalk.green, chalk.bgBlack, yRevealing, xRevealing)
-                    xRevealing++;
+            for(i = 0; i < map.length; i++) {
+                for(o = 0; o < map[0].length; o++) {
+                    printIcon(map[i][o], chalk.green, chalk.bgBlack, i, o)
                 }
-
-
-                yRevealing++;
             }
-            drawUI(); */
+            drawUI();
             break;
 
         case "rareGoggles":
