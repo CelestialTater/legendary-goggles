@@ -4,8 +4,6 @@ const window = require("window-size")
 const keypress = require("keypress")
 const func = require("./funcs")
 
-var x = 0;
-
 //Variable declaration
 var introStep = 0;
 var playingIntro = true;
@@ -846,9 +844,6 @@ playIntro = () =>{
     } else {
         console.clear();
         console.log("Please fullscreen this window");
-        console.log(window.get())
-        x++;
-        console.log(x)
         return new Promise((resolve) => setTimeout(() => {playIntro();}, 50));
     }
 }
