@@ -147,11 +147,7 @@ updateInventoryInterface = () =>{
 /**
  * Lets the user look at and use items in their inventory
  */
-useInventory = (key, ch) =>{
-
-    if (key != null && key.name == "escape") {
-        ch = "escape";
-    }
+useInventory = (ch) =>{
 
     if (inventoryLevel == 0) {
 
@@ -190,7 +186,7 @@ useInventory = (key, ch) =>{
 
     } else {
 
-        switch (key.name) {
+        switch (ch) {
             case "up":
                 if ((amountUsing + 1) <= inventory[itemUsing][0]) {
                     amountUsing++;
@@ -378,6 +374,7 @@ nextLevel = () =>{
         //Ends game
         console.log("Congratulations! You won!");
         introStep = 0;
+        playingIntro = true;
         return new Promise((resolve) => setTimeout(() => {playIntro();}, 5000));     
     }
 }
@@ -877,9 +874,12 @@ printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
+    if (key != null && key.name != undefined) {
+        ch = key.name
+    }
     if (run && !playingIntro) {
         if (!battling && !accessingInventory) {
-            revealMap(key.name)
+            revealMap(ch)
             //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
             process.stdin.pause()
             func.sleep(100).then(() => {
@@ -888,21 +888,21 @@ process.stdin.on('keypress', function (ch, key) {
             } 
         })
         } else if (battling && !accessingInventory) {
-            battle(key.name)
+            battle(ch)
         } else if (!battling && accessingInventory) {
-            useInventory(key, ch)
+            useInventory(ch)
         } else {
             drawUI();
         }
     } else if (playingIntro) {
-        if (key.name == "space") {
+        if (ch == "space") {
             playingIntro = false;
             run = true;
             revealMap("right");
         }
     }
     //stops game.
-    if (key && key.ctrl && key.name == 'c') {
+    if (key && key.ctrl && ch == 'c') {
         process.stdin.pause();
         run = false;
         battling = false;
