@@ -8,6 +8,13 @@ const func = require("./funcs")
 var introStep = 0;
 var playingIntro = true;
 var map = [];
+var coords = [];
+var buildings = [];
+var buildingEvents = [];
+var lastMap = [];
+var enteredBuildingFrom = [];
+var currentBuildingCoords = [];
+var inBuilding = false;
 var floor = 0;
 var highestFloor = 1;
 var battleInterface = [];
@@ -16,10 +23,10 @@ var run = false;
 var lastDirection = "";
 var accessingInventory = false;
 var inventory = {
-    meat:[3, "Meat", "1", "Regenerates 1 point of health."],
-    goggles:[0, "Goggles", "8", "Reveals entire map. 1 use."],
-    rareGoggles:[0, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
-    key:[0, "Key", null, "Opens a door"]
+    meat:[99, "Meat", "1", "Regenerates 1 point of health."],
+    goggles:[99, "Goggles", "8", "Reveals entire map. 1 use."],
+    rareGoggles:[99, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
+    key:[99, "Key", null, "Opens a door"]
 };
 var amountUsing = 1;
 var itemUsing = "Meat";
@@ -39,7 +46,7 @@ var miss = "    ";
 var enemyMiss = "";
 
 //array to hold special characters. store the special character, then the desired color at the index after
-var specialChars = ["8", chalk.blueBright, "[", chalk.redBright, "~", chalk.rgb(51, 51, 255)]
+var specialChars = ["8", chalk.blueBright, "[", chalk.redBright, "~", chalk.rgb(51, 51, 255), "}", chalk.cyanBright, "X", chalk.grey]
 
 /**
  * Prints an icon to the map
@@ -64,6 +71,8 @@ printIcon = (icon, color, bg, y, x) =>{
  */
 drawUI = () =>{
     if (run) {
+
+        //Creates the map
         console.clear()
         if (!battling && !accessingInventory) {
             for(i of map){
@@ -77,6 +86,7 @@ drawUI = () =>{
             }
             console.log("Dev coords: " + coords[0] + "," + coords[1])
             console.log(coords[1] + "," + coords[0])
+
         } else if (battling && !accessingInventory) {
             //Creates battle interface
             battleInterface = []
@@ -331,20 +341,90 @@ reveal = () =>{
 handleEvent = (coordY, coordX) =>{
     if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "8") {
         battling = true;
-        enemyY = coordY
-        enemyX = coordX
+        enemyY = coordY;
+        enemyX = coordX;
         drawUI(); 
         if (!enemyStarted) {
             enemyAttack();
         }
+
+    } else if (buildingEvents[buildingEvents.indexOf(coordY + ", " + coordX) + 1] == "8") {
+        battling = true;
+        enemyY = coordY;
+        enemyX = coordX;
+        drawUI(); 
+        if (!enemyStarted) {
+            enemyAttack();
+        }
+
     } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "~") {
         inventory["key"][0]++;
         eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
         revealMap(lastDirection);
+    
+    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "}") {
+        enterBuilding(coordY, coordX);
+
+    } else if (buildingEvents[buildingEvents.indexOf(coordY + ", " + coordX) + 1] == "}") {
+        exitBuilding();
+
+    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "X") {
+
     } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "[") {
         eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
-        nextLevel()
+        nextLevel();
     }
+}
+
+/**
+ * Generates or loads building
+ * 
+ * @param coordY the main map y-coordinate of the building
+ * @param coordX the main map x-coordinate of the building
+ */
+enterBuilding = (coordY, coordX) =>{
+    //Stores necessary information from the main map
+    enteredBuildingFrom = coords;
+    lastMap = map;
+
+    //Clears the map so that it can be changed to a building
+    map = [];
+
+    //Checks to see if building exists yet
+    if (buildings.includes(coordY + ", " + coordX)) {
+        //Finds the building and its events, and puts them into map and buildingEvents
+        map = buildings[buildings.indexOf(coordY + ", " + coordX) + 1];
+        buildingEvents = buildings[buildings.indexOf(coordY + ", " + coordX) + 2];
+    } else {
+        //Creates a building and events at the coordinates specified and adds it to buildings and map, and buildingEvents
+        map = func.generateMap(-1);
+        buildingEvents = func.getEvents(map);
+        buildings.push(coordY + ", " + coordX);
+        buildings.push(map);
+        buildings.push(buildingEvents);
+    }
+
+    currentBuildingCoords = [coordY, coordX];
+
+    //Moves the player to the correct location
+    coords = [(map.length / 2) - 0.5, (map[0].length - 3)];
+    inBuilding = true;
+
+    revealMap("right");
+}
+
+/**
+ * Exit the current building
+ */
+exitBuilding = () =>{
+    //Save the current buildingEvents
+    buildings[(buildings.indexOf(currentBuildingCoords[0] + ", " + currentBuildingCoords[1]) + 2)] = buildingEvents;
+
+    //Exits building and restores the main map
+    coords = enteredBuildingFrom;
+    map = lastMap;
+    inBuilding = false;
+    drawUI();
 }
 
 /**
@@ -352,6 +432,12 @@ handleEvent = (coordY, coordX) =>{
  */
 nextLevel = () =>{
     floor++;
+
+    //Deletes buildings
+    buildings = [];
+    buildingEvents = [];
+    currentBuildingCoords = [];
+
     console.clear()
     if (floor <= highestFloor) {
         map = func.generateMap(floor);
@@ -445,17 +531,21 @@ battle = (key) =>{
                             inventory["meat"][0]++;
                         }
 
-                        if (eventLocations.length <= 2 && floor == 0) {
+                        if (eventLocations.length <= 2 && floor == 0 && !inBuilding) {
                             inventory["rareGoggles"][0]++;
                         }
 
-                        if (eventLocations.length <= 2 && floor == 1) {
+                        if (eventLocations.length <= 2 && floor == 1 && !inBuilding) {
                             inventory["rareGoggles"][0]++;
                         }
 
                         //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
                         battleEnding = true
-                        eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 2)
+                        if (inBuilding) {
+                            buildingEvents.splice(buildingEvents.indexOf(enemyY + ", " + enemyX), 2)
+                        } else {
+                            eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 2)
+                        }
                         map[enemyY][enemyX] = chalk.bgBlack(".")
                         return new Promise((resolve) => setTimeout(() => {
                             battling = false;
@@ -488,7 +578,7 @@ revealMap = (direction) => {
         lastDirection = direction;
         switch(direction){
             case "up":
-                if (!eventLocations.includes(coords[0] - 1 + ", " + coords[1])) {
+                if (((!eventLocations.includes((coords[0] - 1) + ", " + coords[1])) && inBuilding == false) || (!buildingEvents.includes((coords[0] - 1) + ", " + coords[1]) && inBuilding == true)) {
                     if(coords[0] != 0){
                         printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
                         coords[0]--
@@ -521,7 +611,7 @@ revealMap = (direction) => {
                 }
                 break;
             case "down":
-                if (!eventLocations.includes(coords[0] + 1 + ", " + coords[1])) {
+                if (((!eventLocations.includes((coords[0] + 1) + ", " + coords[1])) && inBuilding == false) || (!buildingEvents.includes((coords[0] + 1) + ", " + coords[1]) && inBuilding == true)) {
                     if(coords[0] != map.length - 1){
                         printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
                         coords[0]++
@@ -555,7 +645,7 @@ revealMap = (direction) => {
                 }
                 break;
             case "left":
-                if (!eventLocations.includes(coords[0] + ", " + (coords[1] - 1))) {
+                if ((!eventLocations.includes(coords[0] + ", " + (coords[1] - 1)) && inBuilding == false) || (!buildingEvents.includes(coords[0] + ", " + (coords[1] - 1)) && inBuilding == true)) {
                     if(coords[1] != 0){
                         printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
                         coords[1]--
@@ -592,7 +682,7 @@ revealMap = (direction) => {
                 }
                 break;
             case "right":
-                if (!eventLocations.includes(coords[0] + ", " + (coords[1] + 1))) {
+                if ((!eventLocations.includes(coords[0] + ", " + (coords[1] + 1)) && inBuilding == false) || (!buildingEvents.includes(coords[0] + ", " + (coords[1] + 1)) && inBuilding == true)) {
                     if(coords[1] != map[0].length - 1){
                         printIcon(".", chalk.green, chalk.bgBlack, coords[0], coords[1])
                         coords[1]++
@@ -870,7 +960,7 @@ if(randomX <= 0){
 if(randomX == 19){
     randomX--
 }
-var coords = [randomY, randomX]
+coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
 
 //Key listeners and coordinate updates based on the movement.
