@@ -1,12 +1,30 @@
 //Imports
 const chalk = require("chalk")
+const window = require("window-size")
 const keypress = require("keypress")
+const func = require("./funcs")
 
-//variable declaration
+//Variable declaration
+var introStep = 0;
+var playingIntro = true;
 var map = [];
-var battleMap = [];
-var run = true;
+var floor = 0;
+var highestFloor = 1;
+var battleInterface = [];
+var inventoryInterface = [];
+var run = false;
 var lastDirection = "";
+var accessingInventory = false;
+var inventory = {
+    meat:[3, "Meat", "1", "Regenerates 1 point of health."],
+    goggles:[0, "Goggles", "8", "Reveals entire map. 1 use."],
+    rareGoggles:[0, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
+    key:[0, "Key", null, "Opens a door"]
+};
+var amountUsing = 1;
+var itemUsing = "Meat";
+var inventoryLevel = 0;
+var inventoryString = "";
 var battling = false;
 var battleEnding = false;
 var enemyStarted = false;
@@ -21,7 +39,7 @@ var miss = "    ";
 var enemyMiss = "";
 
 //array to hold special characters. store the special character, then the desired color at the index after
-var specialChars = ["8", chalk.blueBright]
+var specialChars = ["8", chalk.blueBright, "[", chalk.redBright, "~", chalk.rgb(51, 51, 255)]
 
 /**
  * Prints an icon to the map
@@ -44,46 +62,321 @@ printIcon = (icon, color, bg, y, x) =>{
 /**
  * Draws the map on the console. Should be run after printing icons and during battles.
  */
-drawMap = () =>{
-    console.clear()
-    if (!battling) {
-        for(i of map){
-            var string = ""
-            for(o of i){
-                string += o
+drawUI = () =>{
+    if (run) {
+        console.clear()
+        if (!battling && !accessingInventory) {
+            for(i of map){
+                var string = ""
+                for(o of i){
+                    string += o
+                }
+                string = chalk.bgGreen(string)
+                string = chalk.green(string)
+                console.log(string)
             }
-            string = chalk.bgGreen(string)
-            string = chalk.green(string)
-            console.log(string)
-        }
-        console.log("Dev coords: " + coords[0] + "," + coords[1])
-        console.log(coords[1] + "," + coords[0])
-    } else {
-        //Creates battle interface
-        battleMap = []
-        battleMap.push(["\n"])
-        battleMap.push([" "  + "[" + drawHealthBar(healthBar) + "]" + "    " + "[" + drawHealthBar(enemyHealthBar) + "]"])
-        battleMap.push(["\n"])
-        battleMap.push(["      @             " + currentEnemy])
-        battleMap.push(["    " + miss + "          " + enemyMiss])
-        battleMap.push(chalk.magentaBright(" --- Press Space to attack! ---"))
-        
-        for(i of battleMap){
-            var string = ""
-            for(o of i){
-                string += o
+            console.log("Dev coords: " + coords[0] + "," + coords[1])
+            console.log(coords[1] + "," + coords[0])
+        } else if (battling && !accessingInventory) {
+            //Creates battle interface
+            battleInterface = []
+            battleInterface.push(["\n"])
+            battleInterface.push([" "  + "[" + func.drawHealthBar(healthBar) + "]" + "    " + "[" + func.drawHealthBar(enemyHealthBar) + "]"])
+            battleInterface.push(["\n"])
+            battleInterface.push(["      @             " + currentEnemy])
+            battleInterface.push(["    " + miss + "          " + enemyMiss])
+            battleInterface.push(chalk.magentaBright(" --- Press Space to attack! ---"))
+
+            for(i of battleInterface){
+                var string = ""
+                for(o of i){
+                    string += o
+                }
+                string = chalk.green(string)
+                console.log(string)
             }
-            string = chalk.green(string)
-            console.log(string)
+        } else {
+            //Creates inventory interface
+            updateInventoryInterface()
+            for (i of inventoryInterface) {
+                var string = ""
+                for (o of i) {
+                    string += o
+                }
+                string = chalk.green(string)
+                console.log(string)
+            }
         }
     }
 }
+
 /**
- * Sleep function
- * @param time time in milliseconds
+ * Creates the inventory screen
  */
-sleep = (time) =>{
-    return new Promise((resolve) => setTimeout(resolve, time));
+updateInventoryInterface = () =>{
+    inventoryInterface = []
+    if (inventoryLevel == 0) {
+        inventoryInterface.push("Inventory")
+        inventoryInterface.push("")
+        for (let item of Object.keys(inventory)) {
+            if (inventory[item.toString()][0] > 0) {
+                inventoryString = inventory[item.toString()][0] + "x "
+                inventoryString = inventoryString + inventory[item.toString()][1]
+                if(inventory[item.toString()][2] != null) {
+                    inventoryString = inventoryString + " [" + inventory[item.toString()][2] + "]";
+                }
+                inventoryInterface.push(inventoryString)
+                inventoryInterface.push(inventory[item.toString()][3])
+                inventoryInterface.push("")
+            }
+        }
+        if (inventoryInterface.length <= 2) {
+            inventoryInterface.push("Your inventory is empty. Go find some stuff!");
+        }
+    } else {
+        inventoryInterface.push("Using " + amountUsing + "/" + inventory[itemUsing][0] + " " + inventory[itemUsing][1].toLowerCase());
+        inventoryInterface.push("")
+        if (inventory[itemUsing][0] > 1) {
+            inventoryInterface.push("Press up and down arrows to change amount using, press enter to confirm, press escape to cancel")
+        } else {
+            inventoryInterface.push("Press enter to confirm, press escape to cancel")
+        }
+    }
+}
+
+/**
+ * Lets the user look at and use items in their inventory
+ */
+useInventory = (ch) =>{
+
+    if (inventoryLevel == 0) {
+
+        switch (ch) {
+            case "1":
+                if (inventory["meat"][0] >= 1) {
+                    itemUsing = "meat"
+                    inventoryLevel = 1
+                    drawUI()
+                }
+                break;
+
+            case "8":
+                if (inventory["goggles"][0] >= 1) {
+                    itemUsing = "goggles"
+                    inventoryLevel = 1
+                    drawUI()
+                }
+                break;
+
+            case "9":
+                if (inventory["rareGoggles"][0] >= 1) {
+                    itemUsing = "rareGoggles"
+                    inventoryLevel = 1
+                    drawUI()
+                }
+                break;
+
+            case "escape":
+                accessingInventory = false;
+                drawUI()
+
+            default:
+                break;
+        }
+
+    } else {
+
+        switch (ch) {
+            case "up":
+                if ((amountUsing + 1) <= inventory[itemUsing][0]) {
+                    amountUsing++;
+                    drawUI();
+                }
+                break;
+
+            case "down":
+                if ((amountUsing - 1) >= 1) {
+                    amountUsing--;
+                    drawUI();
+                }
+                break;
+
+            case "return":
+                inventory[itemUsing][0] -= amountUsing;
+                useItem();
+                break;
+
+            case "escape":
+                inventoryLevel = 0;
+                amountUsing = 1;
+                drawUI()
+        
+            default:
+                break;
+        }
+    }
+}
+
+/**
+ * Consumes items and activates effects of said items
+ */
+useItem = () =>{
+    switch (itemUsing) {
+        case "meat":
+            
+            if (amountUsing + health <= maxHealth) {
+                health += amountUsing;
+                inventoryLevel = 0;
+                drawUI();
+            } else {
+                health = maxHealth;
+                inventoryLevel = 0;
+                drawUI();
+                console.log(chalk.magentaBright("What a waste of food..."))
+            }
+
+            amountUsing = 1;
+            healthBar = func.generateHealthBar(maxHealth, health);
+
+            break;
+
+        case "goggles":
+
+            reveal()
+            inventoryLevel = 0
+            drawUI()
+            amountUsing = 1
+
+            break;
+
+        case "rareGoggles":
+
+            reveal()
+            inventoryLevel = 0
+            drawUI()
+            amountUsing = 1
+
+            break;
+    
+        default:
+            break;
+    }
+}
+
+/**
+ * Generates and reveals special tiles, or automatically reveals the entire map
+ */
+reveal = () =>{
+    switch (itemUsing) {
+
+        case "goggles":
+            
+            //Reveals entire map
+            for(i = 0; i < map.length; i++) {
+                for(o = 0; o < map[0].length; o++) {
+                    printIcon(map[i][o], chalk.green, chalk.bgBlack, i, o)
+                }
+            }
+            drawUI();
+            break;
+
+        case "rareGoggles":
+
+
+            //Floor specific items
+            for (var gen = 0; gen < 1; gen++) {
+                if (floor == 0) {
+                    let randY = Math.floor(Math.random() * map.length)
+                    let randX = Math.floor(Math.random() * map[0].length)
+                    if (map[randY][randX] == "@"){
+                        gen--;
+                    } else {
+                        map[randY][randX] = chalk.bgBlack(chalk.rgb(51, 51, 255)("~"))
+                        eventLocations.push(randY + ", " + randX)
+                        eventLocations.push("~")
+                    }
+                }
+            }
+
+
+            //Creates and reveals exit
+            for(var gen = 0; gen < 1; gen++){
+                let randY = Math.floor(Math.random() * map.length)
+                let randX = Math.floor(Math.random() * map[0].length)
+                if (map[randY][randX] == "@" || map[randY][randX] == "~"){
+                    gen--;
+                } else {
+                    map[randY][randX] = chalk.bgBlack(chalk.redBright("["))
+                    eventLocations.push(randY + ", " + randX)
+                    eventLocations.push("[")
+                }
+            }
+
+
+            break;
+
+        default:
+            break;
+
+    }
+    drawUI()
+}
+
+/**
+ * Handles events
+ * 
+ * @param coordY the Y coordinate of the event
+ * @param coordX the X coordinate of the event
+ */
+handleEvent = (coordY, coordX) =>{
+    if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "8") {
+        battling = true;
+        enemyY = coordY
+        enemyX = coordX
+        drawUI(); 
+        if (!enemyStarted) {
+            enemyAttack();
+        }
+    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "~") {
+        inventory["key"][0]++;
+        eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
+        revealMap(lastDirection);
+    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "[") {
+        eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
+        nextLevel()
+    }
+}
+
+/**
+ * Makes a new map and changes level
+ */
+nextLevel = () =>{
+    floor++;
+    console.clear()
+    if (floor <= highestFloor) {
+        map = func.generateMap(floor);
+        eventLocations = func.getEvents(map);
+        let randomY = Math.floor(Math.random() * map.length - 1)
+        let randomX = Math.floor(Math.random() * map[0].length - 1)
+        if(randomY <= 0){
+            randomY++
+        }
+        if(randomX <= 0){
+            randomX++
+        }
+        if(randomX == map.length - 1){
+            randomX--
+        }
+        coords = [randomY, randomX]
+        printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
+        revealMap("right");
+    } else {
+        //Ends game
+        console.log("Congratulations! You won!");
+        introStep = 0;
+        playingIntro = true;
+        return new Promise((resolve) => setTimeout(() => {playIntro();}, 5000));     
+    }
 }
 
 /**
@@ -104,13 +397,14 @@ enemyAttack = () =>{
                     spaceFiller = " "
                 }
                 if (health <= 0) {
-                    drawMap()
+                    drawUI()
                     battleEnding = true
                     return new Promise((resolve) => setTimeout(() => {
                         battling = false
                         console.clear()
-                        console.log(chalk.magentaBright("You Died. Control-C to exit."))
+                        console.log(chalk.magentaBright("You Died."))
                         run = false
+                        process.stdin.pause();
                     }, 2000));
                 }
             } else {
@@ -122,34 +416,9 @@ enemyAttack = () =>{
                 enemyAttack()
             }
         }
-        drawMap()
+        drawUI()
         
     }, 1000));
-}
-
-
-/**
- * Converts a health bar to a string
- * @param bar bar to convert
- */
-drawHealthBar = (bar) =>{
-    let str = ""
-    for(i of bar){
-        str += i
-    }
-    return str
-}
-
-/**
- * Generates a health bar
- * @param len the size of the health bar (aka: max health)
- */
-generateHealthBar = (len) =>{
-    var bar = []
-    for(i = 0; i < len; i++){
-        bar.push(chalk.bgWhite(" "))
-    }
-    return bar
 }
 
 /**
@@ -157,27 +426,42 @@ generateHealthBar = (len) =>{
  * @param key key that triggered battle function
  */
 battle = (key) =>{
+    healthBar = func.generateHealthBar(maxHealth, health);
+    drawUI();
     if (!battleEnding) {
         switch (key) {
             case "space":
 
                 //Player has a 1 in 6 chance of missing
-                if(Math.floor(Math.random() * 7) != 6) {
+                if (Math.floor(Math.random() * 7) != 6) {
                     enemyHealth--
                     enemyHealthBar[enemyHealth] = chalk.bgBlack(" ")
                     miss = "    "
                     if (enemyHealth <= 0) {
-                        drawMap()
+                        drawUI()
+
+                        //Give items to player
+                        if (Math.floor(Math.random() * 4) != 3) {
+                            inventory["meat"][0]++;
+                        }
+
+                        if (eventLocations.length <= 2 && floor == 0) {
+                            inventory["rareGoggles"][0]++;
+                        }
+
+                        if (eventLocations.length <= 2 && floor == 1) {
+                            inventory["rareGoggles"][0]++;
+                        }
 
                         //Reset the battle, remove defeated enemy from map and eventLocations, and move onto the tile
                         battleEnding = true
-                        eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 1)
+                        eventLocations.splice(eventLocations.indexOf(enemyY + ", " + enemyX), 2)
                         map[enemyY][enemyX] = chalk.bgBlack(".")
                         return new Promise((resolve) => setTimeout(() => {
                             battling = false;
                             revealMap(lastDirection);
                             enemyHealth = maxEnemyHealth;
-                            enemyHealthBar = generateHealthBar(5)
+                            enemyHealthBar = func.generateHealthBar(5)
                             enemyStarted = false;
                             battleEnding = false;
                         }, 2000));
@@ -192,50 +476,15 @@ battle = (key) =>{
         }
     }
 
-    drawMap()
-}
-
-var eventLocations = []
-/**
- * Generates a map with events in random positions
- * @param floor (currently no use, will affect generation in future). defaults to 1
- */
-generateMap = (floor = 1) =>{
-    //TODO: Add floors and differences between floors
-    switch(floor){
-        case 1:
-            maxEnemyHealth = 5
-            enemyHealth = maxEnemyHealth
-            for(var arr = 0; arr < 15; arr++){
-                var str = []
-                for(var chr = 0; chr < 20; chr++){
-                    str.push(".")
-                }
-                map.push(str);
-            }
-            for(var scc = 0; scc < 10; scc++){
-                let randY = Math.floor(Math.random() * 15)
-                let randX = Math.floor(Math.random() * 20)
-                if (map[randY][randX] == "8"){
-                    scc--;
-                }else{
-                    map[randY][randX] = "8"
-                    eventLocations.push(randY + ", " + randX) 
-                }
-               
-            }
-            break;
-        default:
-            console.log("Error: generateMap invalid input")
-    }
+    drawUI()
 }
 
 /**
  * Reveals appropriate map tiles
  * @param direction direction of movement
  */
-revealMap = (direction) =>{
-    if (!battling) {
+revealMap = (direction) => {
+    if (!battling && !accessingInventory) {
         lastDirection = direction;
         switch(direction){
             case "up":
@@ -245,7 +494,7 @@ revealMap = (direction) =>{
                         coords[0]--
                         if(coords[0] == 0){
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])  
-                            drawMap()
+                            drawUI()
                         }else if(coords[1] == map[0].length - 1){
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
@@ -253,7 +502,7 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }else{
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -264,17 +513,11 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }
                     }
                 } else {
-                    battling = true;
-                    enemyY = coords[0] - 1
-                    enemyX = coords[1]
-                    drawMap(); 
-                    if (!enemyStarted) {
-                        enemyAttack();
-                    }
+                    handleEvent(coords[0] - 1, coords[1])
                 }
                 break;
             case "down":
@@ -284,7 +527,7 @@ revealMap = (direction) =>{
                         coords[0]++
                         if(coords[0] == map.length - 1){
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }else if(coords[1] == map[0].length - 1){
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
@@ -292,7 +535,7 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1]) 
-                            drawMap()
+                            drawUI()
                         }else{
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -303,18 +546,12 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }
                         
                     }
                 } else {
-                    battling = true;
-                    enemyY = coords[0] + 1
-                    enemyX = coords[1]
-                    drawMap();
-                    if (!enemyStarted) {
-                        enemyAttack();
-                    }
+                    handleEvent(coords[0] + 1, coords[1])
                 }
                 break;
             case "left":
@@ -329,14 +566,14 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])   
-                            drawMap()
+                            drawUI()
                         }else if(coords[0] == map.length - 1){
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
                             printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
                             printIcon(map[coords[0]][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0], coords[1] - 1)
                             printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }else{
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -347,17 +584,11 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }
                     }
                 } else {
-                    battling = true;
-                    enemyY = coords[0]
-                    enemyX = (coords[1] - 1)
-                    drawMap();
-                    if (!enemyStarted) {
-                        enemyAttack();
-                    }
+                    handleEvent(coords[0], coords[1] - 1)
                 }
                 break;
             case "right":
@@ -368,10 +599,10 @@ revealMap = (direction) =>{
                         if(coords[1] == map[0].length - 1){
                             if(coords[0] == 0){
                                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                                drawMap()
+                                drawUI()
                             }else if(coords[0] == map.length - 1){
                                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                                drawMap()
+                                drawUI()
                             }else{
                                 printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                                 printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])  
@@ -379,7 +610,7 @@ revealMap = (direction) =>{
                                 printIcon(map[coords[0] - 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] - 1)
                                 printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                                 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1]) 
-                                drawMap()
+                                drawUI()
                             }
                         }else if(coords[0] == map.length - 1){ 
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -389,7 +620,7 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
                             
-                            drawMap()  
+                            drawUI()  
                         }else if(coords[0] == 0){
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0]][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0], coords[1] + 1)
@@ -397,7 +628,7 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] + 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }else{
                             printIcon(map[coords[0] + 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1])
                             printIcon(map[coords[0] - 1][coords[1]], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1])
@@ -408,19 +639,23 @@ revealMap = (direction) =>{
                             printIcon(map[coords[0] - 1][coords[1] + 1], chalk.green, chalk.bgBlack, coords[0] - 1, coords[1] + 1)
                             printIcon(map[coords[0] + 1][coords[1] - 1], chalk.green, chalk.bgBlack, coords[0] + 1, coords[1] - 1)
                             printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-                            drawMap()
+                            drawUI()
                         }
                     }
                 } else {
-                    battling = true;
-                    enemyY = coords[0]
-                    enemyX = (coords[1] + 1)
-                    drawMap();
-                    if (!enemyStarted) {
-                        enemyAttack();
-                    }
+                    handleEvent(coords[0], coords[1] + 1)
                 }
                 break;
+
+            case "i":
+                
+                accessingInventory = true;
+                inventoryLevel = 0;
+                itemsUsing = 0;
+                drawUI();
+
+                break;
+
             default:
                 console.log(chalk.magentaBright("Use the arrow keys to move!"));
                 break;
@@ -428,9 +663,202 @@ revealMap = (direction) =>{
     }
 }
 
-generateMap()
-var healthBar = generateHealthBar(maxHealth)
-var enemyHealthBar = generateHealthBar(maxEnemyHealth)
+/**
+ * Animation for the beginning of the game
+ */
+playIntro = () =>{
+    if (window.get().height != 30 && window.get().width != 120) {
+        if(playingIntro) {
+            switch (true) {
+                case (introStep == 0):
+
+                    console.clear()
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`  _                                    _                     `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` | |                                  | |                    `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`                __/ |                                   __/ |`))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`               |___/                                   |___/ `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`           _____                       _                     `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`          / ____|                     | |                    `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`                          __/ |  __/ |                       `))
+                    console.log(chalk.rgb(193, 156, 0)(String.raw`                         |___/  |___/                        `))
+                    introStep++;
+                    return new Promise((resolve) => setTimeout(() => {playIntro();}, 3000));
+
+                    break;
+
+                case (introStep < 11 && introStep > 0):
+                    console.clear()
+
+                    if (introStep != 10) {
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`  _                                    _                     `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |                                  | |                    `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                __/ |                                   __/ |`))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`               |___/                                   |___/ `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`           _____                       _                     `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          / ____|                     | |                    `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                          __/ |  __/ |                       `))
+                        console.log(chalk.rgb(193 - ((introStep - 1) * 21), 156 - ((introStep - 1) * 17), 0)(String.raw`                         |___/  |___/                        `))
+                        introStep++;
+                    } else {
+                        console.log(chalk.black(String.raw`  _                                    _                     `))
+                        console.log(chalk.black(String.raw` | |                                  | |                    `))
+                        console.log(chalk.black(String.raw` | |      ___   __ _   ___  _ __    __| |  __ _  _ __  _   _ `))
+                        console.log(chalk.black(String.raw` | |     / _ \ / _' | / _ \| '_ \  / _' | / _' || '__|| | | |`))
+                        console.log(chalk.black(String.raw` | |____|  __/| (_| ||  __/| | | || (_| || (_| || |   | |_| |`))
+                        console.log(chalk.black(String.raw` |______|\___| \__, | \___||_| |_| \__,_| \__,_||_|    \__, |`))
+                        console.log(chalk.black(String.raw`                __/ |                                   __/ |`))
+                        console.log(chalk.black(String.raw`               |___/                                   |___/ `))
+                        console.log(chalk.black(String.raw`           _____                       _                     `))
+                        console.log(chalk.black(String.raw`          / ____|                     | |                    `))
+                        console.log(chalk.black(String.raw`         | |  __   ___    __ _   __ _ | |  ___  ___          `))
+                        console.log(chalk.black(String.raw`         | | |_ | / _ \  / _' | / _' || | / _ \/ __|         `))
+                        console.log(chalk.black(String.raw`         | |__| || (_) || (_| || (_| || ||  __/\__ \         `))
+                        console.log(chalk.black(String.raw`          \_____| \___/  \__, | \__, ||_| \___||___/         `))
+                        console.log(chalk.black(String.raw`                          __/ |  __/ |                       `))
+                        console.log(chalk.black(String.raw`                         |___/  |___/                        `))
+                        introStep++;
+                    }
+                    return new Promise((resolve) => setTimeout(() => {playIntro();}, 200));
+
+                    break;
+                case (introStep == 11 && floor == 0):
+                    
+                    introStep++;
+                    return new Promise((resolve) => setTimeout(() => {playIntro();}, 1750));
+
+                    break;
+
+                case (introStep == 12 && floor == 0):
+
+                    console.clear()
+                    console.log("\n")
+                    console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                    console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                    console.log("     " + chalk.rgb(193, 156, 0)("@") + "    " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                    func.sleep(300).then(() =>{
+                        console.clear()
+                        console.log("\n")
+                        console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                        console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                        console.log("     " + chalk.rgb(193, 156, 0)("@") + "    " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                        func.sleep(300).then(() =>{
+                            console.clear()
+                            console.log("\n")
+                            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                            console.log("      " + chalk.rgb(193, 156, 0)("@") + "   " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                            func.sleep(300).then(() =>{
+                                console.clear()
+                                console.log("\n")
+                                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                console.log("       " + chalk.rgb(193, 156, 0)("@") + "  " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                func.sleep(300).then(() =>{
+                                    console.clear()
+                                    console.log("\n")
+                                    console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                    console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                    console.log("        " + chalk.rgb(193, 156, 0)("@") + " " + chalk.bgRgb(255, 255, 255)("  ") + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                    func.sleep(300).then(() =>{
+                                        console.clear()
+                                        console.log("\n")
+                                        console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                        console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                        console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)("@ ")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                        func.sleep(300).then(() =>{
+                                            console.clear()
+                                            console.log("\n")
+                                            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                            console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                            console.log("          " + chalk.bgRgb(255, 255, 255)(chalk.rgb(193, 156, 0)(" @")) + " " + chalk.bgRgb(255, 255, 255)("  "))
+                                            func.sleep(300).then(() =>{
+                                                console.clear()
+                                                console.log("\n")
+                                                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                                console.log("          " + chalk.bgRgb(255, 255, 255)("     "))
+                                                console.log("          " + chalk.bgRgb(255, 255, 255)("  ") + chalk.rgb(193, 156, 0)("@") + chalk.bgRgb(255, 255, 255)("  "))
+                                                func.sleep(150).then(() =>{
+                                                    introStep++;
+                                                    playIntro();
+                                                })
+                                            })
+                                        })
+                                    })
+                                })
+                            })
+                        })
+                    })
+
+                    break;
+
+                    case (introStep >= 13 && introStep <= 22 && floor == 0):
+
+                        var fade = (22 - introStep) / 10;
+                        
+                        console.clear()
+                        console.log("\n")
+                        console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("     "))
+                        console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("     "))
+                        console.log("          " + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("  ") + chalk.rgb(173 * fade, 140 * fade, 0)("@") + chalk.bgRgb(230 * fade, 230 * fade, 230 * fade)("  "))
+                        introStep++;
+
+                        return new Promise((resolve) => setTimeout(() => {playIntro();}, 150));
+
+                    case (introStep == 23 && floor == 0):
+
+                        return new Promise((resolve) => setTimeout(() => {
+                            run = true;
+                            playingIntro = false;
+                            revealMap("right");
+                        }, 150));
+
+                        break;
+
+                    case (introStep == 11 && floor != 0):
+
+                        //Ends program
+
+                        run = false;
+                        playingIntro = false;
+                        console.clear();
+                        process.stdin.pause();
+
+                        break;
+
+                default:
+                    console.log("Error: Invalid introStep of " + introStep + " for floor " + floor);
+                    break;
+            }
+        }
+    } else {
+        console.clear();
+        console.log("Please fullscreen this window");
+        return new Promise((resolve) => setTimeout(() => {playIntro();}, 50));
+    }
+}
+
+
+playIntro()
+var map = func.generateMap(floor)
+var eventLocations = func.getEvents(map)
+var healthBar = func.generateHealthBar(maxHealth)
+var enemyHealthBar = func.generateHealthBar(maxEnemyHealth)
 let randomY = Math.floor(Math.random() * map.length - 1)
 let randomX = Math.floor(Math.random() * map[0].length - 1)
 if(randomY <= 0){
@@ -442,31 +870,42 @@ if(randomX <= 0){
 if(randomX == 19){
     randomX--
 }
-let coords = [randomY, randomX]
+var coords = [randomY, randomX]
 printIcon("@", chalk.yellow, chalk.bgBlack, coords[0], coords[1])
-revealMap("right")
-drawMap()
 
 //Key listeners and coordinate updates based on the movement.
 keypress(process.stdin);
 process.stdin.setRawMode(true);
 process.stdin.on('keypress', function (ch, key) {
-    if (run) {
-        if (!battling) {
-            revealMap(key.name)
+    if (key != null && key.name != undefined) {
+        ch = key.name
+    }
+    if (run && !playingIntro) {
+        if (!battling && !accessingInventory) {
+            revealMap(ch)
             //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
             process.stdin.pause()
-            sleep(100).then(() => {
+            func.sleep(100).then(() => {
             if(run){
                 process.stdin.resume()
             } 
         })
+        } else if (battling && !accessingInventory) {
+            battle(ch)
+        } else if (!battling && accessingInventory) {
+            useInventory(ch)
         } else {
-            battle(key.name)
+            drawUI();
+        }
+    } else if (playingIntro && floor == 0) {
+        if (ch == "space") {
+            playingIntro = false;
+            run = true;
+            revealMap("right");
         }
     }
     //stops game.
-    if (key && key.ctrl && key.name == 'c') {
+    if (key && key.ctrl && ch == 'c') {
         process.stdin.pause();
         run = false;
         battling = false;
