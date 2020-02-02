@@ -402,8 +402,9 @@ enemyAttack = () =>{
                     return new Promise((resolve) => setTimeout(() => {
                         battling = false
                         console.clear()
-                        console.log(chalk.magentaBright("You Died. Control-C to exit."))
+                        console.log(chalk.magentaBright("You Died."))
                         run = false
+                        process.stdin.pause();
                     }, 2000));
                 }
             } else {
@@ -835,6 +836,8 @@ playIntro = () =>{
 
                         run = false;
                         playingIntro = false;
+                        console.clear();
+                        process.stdin.pause();
 
                         break;
 
@@ -894,7 +897,7 @@ process.stdin.on('keypress', function (ch, key) {
         } else {
             drawUI();
         }
-    } else if (playingIntro) {
+    } else if (playingIntro && floor == 0) {
         if (ch == "space") {
             playingIntro = false;
             run = true;
