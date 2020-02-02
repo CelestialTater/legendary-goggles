@@ -16,10 +16,10 @@ var run = false;
 var lastDirection = "";
 var accessingInventory = false;
 var inventory = {
-    meat:[99, "Meat", "1", "Regenerates 1 point of health."],
-    goggles:[99, "Goggles", "8", "Reveals entire map. 1 use."],
-    rareGoggles:[99, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
-    key:[99, "Key", null, "Opens a door"]
+    meat:[3, "Meat", "1", "Regenerates 1 point of health."],
+    goggles:[0, "Goggles", "8", "Reveals entire map. 1 use."],
+    rareGoggles:[0, "Rare Goggles", "9", "Reveals hidden objects and passageways. 1 use."],
+    key:[0, "Key", null, "Opens a door"]
 };
 var amountUsing = 1;
 var itemUsing = "Meat";
