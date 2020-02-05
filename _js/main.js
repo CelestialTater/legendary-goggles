@@ -9,8 +9,12 @@ var introStep = 0;
 var playingIntro = true;
 var map = [];
 var coords = [];
+var keyInterface = [];
+var usingKey = false;
 var buildings = [];
 var buildingEvents = [];
+var eventY = 0;
+var eventX = 0;
 var lastMap = [];
 var enteredBuildingFrom = [];
 var currentBuildingCoords = [];
@@ -46,7 +50,7 @@ var miss = "    ";
 var enemyMiss = "";
 
 //array to hold special characters. store the special character, then the desired color at the index after
-var specialChars = ["8", chalk.blueBright, "[", chalk.redBright, "~", chalk.rgb(51, 51, 255), "}", chalk.cyanBright, "X", chalk.grey]
+var specialChars = ["8", chalk.blueBright, "[", chalk.redBright, "~", chalk.rgb(51, 51, 255), "}", chalk.cyanBright, "X", chalk.grey, "-", chalk.red, "$", chalk.yellowBright]
 
 /**
  * Prints an icon to the map
@@ -74,7 +78,7 @@ drawUI = () =>{
 
         //Creates the map
         console.clear()
-        if (!battling && !accessingInventory) {
+        if (!battling && !accessingInventory && !usingKey) {
             for(i of map){
                 var string = ""
                 for(o of i){
@@ -87,7 +91,7 @@ drawUI = () =>{
             console.log("Dev coords: " + coords[0] + "," + coords[1])
             console.log(coords[1] + "," + coords[0])
 
-        } else if (battling && !accessingInventory) {
+        } else if (battling && !accessingInventory && !usingKey) {
             //Creates battle interface
             battleInterface = []
             battleInterface.push(["\n"])
@@ -105,6 +109,16 @@ drawUI = () =>{
                 string = chalk.green(string)
                 console.log(string)
             }
+        } else if (usingKey) {
+            updateKeyInterface();
+            for(i of keyInterface){
+                var string = ""
+                for(o of i){
+                    string += o
+                }
+                string = chalk.green(string)
+                console.log(string)
+            } 
         } else {
             //Creates inventory interface
             updateInventoryInterface()
@@ -339,40 +353,78 @@ reveal = () =>{
  * @param coordX the X coordinate of the event
  */
 handleEvent = (coordY, coordX) =>{
-    if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "8") {
-        battling = true;
-        enemyY = coordY;
-        enemyX = coordX;
-        drawUI(); 
-        if (!enemyStarted) {
-            enemyAttack();
+    eventY = coordY;
+    eventX = coordX;
+    if (!inBuilding) {
+
+        if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "8") {
+            battling = true;
+            enemyY = coordY;
+            enemyX = coordX;
+            drawUI(); 
+            if (!enemyStarted) {
+                enemyAttack();
+            }
+
+        } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "~") {
+            inventory["key"][0]++;
+            eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
+            revealMap(lastDirection);
+
+        } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "}") {
+            enterBuilding(coordY, coordX);
+
+        } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "[") {
+            eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
+            nextLevel();
         }
 
-    } else if (buildingEvents[buildingEvents.indexOf(coordY + ", " + coordX) + 1] == "8") {
-        battling = true;
-        enemyY = coordY;
-        enemyX = coordX;
-        drawUI(); 
-        if (!enemyStarted) {
-            enemyAttack();
-        }
-
-    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "~") {
-        inventory["key"][0]++;
-        eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
-        revealMap(lastDirection);
+    } else {
     
-    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "}") {
-        enterBuilding(coordY, coordX);
+        if (buildingEvents[buildingEvents.indexOf(coordY + ", " + coordX) + 1] == "8") {
+            battling = true;
+            enemyY = coordY;
+            enemyX = coordX;
+            drawUI(); 
+            if (!enemyStarted) {
+                enemyAttack();
+            }
 
-    } else if (buildingEvents[buildingEvents.indexOf(coordY + ", " + coordX) + 1] == "}") {
-        exitBuilding();
+        } else if (buildingEvents[buildingEvents.indexOf(coordY + ", " + coordX) + 1] == "}") {
+            exitBuilding();
 
-    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "X") {
+        } else if (buildingEvents[buildingEvents.indexOf(coordY + ", " + coordX) + 1] == "-") {
+            usingKey = true;
+            drawUI();
 
-    } else if (eventLocations[eventLocations.indexOf(coordY + ", " + coordX) + 1] == "[") {
-        eventLocations.splice(eventLocations.indexOf(coordY + ", " + coordX), 2);
-        nextLevel();
+        } else if (buildingEvents[buildingEvents.indexOf(coordY + ", " + coordX) + 1] == "$") {
+            inventory.goggles[0]++;
+            buildingEvents.splice(buildingEvents.indexOf(coordY + ", " + coordX) + 1, 2);
+            revealMap(lastDirection);
+        }
+    }
+}
+
+/**
+ * Asks user if they want to use a key
+ */
+updateKeyInterface = () =>{
+    keyInterface = [];
+    
+    if (inventory["key"][0] >= 1) {
+        keyInterface.push("Would you like to use one of your keys to open this door?")
+        keyInterface.push("")
+        if (inventory["key"][0] == 1) {
+            keyInterface.push("You have 1 key.")
+        } else {
+            keyInterface.push("You have " + inventory["key"][0] + " keys.")
+        }
+        keyInterface.push("")
+        keyInterface.push("Press enter to confirm, press escape to cancel.")
+    } else {
+        keyInterface.push("You need a key to open this door.")
+        keyInterface.push("")
+        keyInterface.push("Press escape to exit")
     }
 }
 
@@ -971,7 +1023,7 @@ process.stdin.on('keypress', function (ch, key) {
         ch = key.name
     }
     if (run && !playingIntro) {
-        if (!battling && !accessingInventory) {
+        if (!battling && !accessingInventory && !usingKey) {
             revealMap(ch)
             //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
             process.stdin.pause()
@@ -980,10 +1032,34 @@ process.stdin.on('keypress', function (ch, key) {
                 process.stdin.resume()
             } 
         })
-        } else if (battling && !accessingInventory) {
+        } else if (battling && !accessingInventory && !usingKey) {
             battle(ch)
-        } else if (!battling && accessingInventory) {
+        } else if (!battling && accessingInventory && !usingKey) {
             useInventory(ch)
+        } else if (usingKey) {
+            switch (ch) {
+                case "return":
+                    
+                    if (inventory.key[0] >= 1) {
+                        inventory.key[0]--;
+                        usingKey = false;
+                        buildingEvents.splice(buildingEvents.indexOf(eventY + ", " + eventX), 2);
+                        revealMap(lastDirection);
+                        drawUI();
+                    }
+
+                    break;
+
+                case "escape":
+
+                    usingKey = false;
+                    drawUI();
+
+                    break;
+            
+                default:
+                    break;
+            }
         } else {
             drawUI();
         }
