@@ -2,9 +2,13 @@
 const chalk = require("chalk")
 const window = require("window-size")
 const keypress = require("keypress")
+const crypto = require("crypto-js")
+const cp = require("copy-paste")
 const func = require("./funcs")
 
 //Variable declaration
+var loading = false;
+var savedInformation = [];
 var introStep = 0;
 var playingIntro = true;
 var map = [];
@@ -48,9 +52,52 @@ var maxHealth = 10;
 var health = maxHealth;
 var miss = "    ";
 var enemyMiss = "";
+var saveString = "";
 
 //array to hold special characters. store the special character, then the desired color at the index after
 var specialChars = ["8", chalk.blueBright, "[", chalk.redBright, "~", chalk.rgb(51, 51, 255), "}", chalk.cyanBright, "X", chalk.grey, "-", chalk.red, "$", chalk.yellowBright]
+
+save = () => {
+    saveString = "";
+    saveString += map
+    saveString += ":"
+    saveString += coords[0]
+    saveString += ":"
+    saveString += coords[1]
+    saveString += ":"
+    saveString += buildings
+    saveString += ":"
+    saveString += floor
+    saveString += ":"
+    saveString += inventory
+    saveString += ":"
+    saveString += health
+    saveString = crypto.AES.encrypt(saveString, "SaveString").toString();
+    console.clear();
+    console.log(saveString);
+}
+
+load = (key) => {
+    console.clear();
+    console.log("Please paste your save: " + saveString);
+    if (key == "return") {
+        if (saveString != "") {
+            saveString = crypto.AES.decrypt(saveString, "SaveString");
+            saveString = saveString.toString(crypto.enc.Utf8);
+            savedInformation = saveString.split(":");
+            //map = savedInformation[0];
+            coords[0] = parseInt(savedInformation[1]);
+            coords[1] = parseInt(savedInformation[2]);
+            //buildings = savedInformation[3];
+            floor = parseInt(savedInformation[4]);
+            //inventory = savedInformation[5];
+            health = parseInt(savedInformation[6]);
+            loading = false;
+            run = true;
+            drawUI();
+        }
+    }
+}
 
 /**
  * Prints an icon to the map
@@ -71,7 +118,7 @@ printIcon = (icon, color, bg, y, x) =>{
 
 }  
 /**
- * Draws the map on the console. Should be run after printing icons and during battles.
+ * Draws the map on the console. Should be run after printing icons and during battles, or after loading a save
  */
 drawUI = () =>{
     if (run) {
@@ -629,6 +676,12 @@ revealMap = (direction) => {
     if (!battling && !accessingInventory) {
         lastDirection = direction;
         switch(direction){
+            case "escape":
+                //save();
+                loading = true;
+                load(direction);
+                break;
+
             case "up":
                 if (((!eventLocations.includes((coords[0] - 1) + ", " + coords[1])) && inBuilding == false) || (!buildingEvents.includes((coords[0] - 1) + ", " + coords[1]) && inBuilding == true)) {
                     if(coords[0] != 0){
@@ -1022,7 +1075,7 @@ process.stdin.on('keypress', function (ch, key) {
     if (key != null && key.name != undefined) {
         ch = key.name
     }
-    if (run && !playingIntro) {
+    if (run && !playingIntro && !loading) {
         if (!battling && !accessingInventory && !usingKey) {
             revealMap(ch)
             //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
@@ -1069,12 +1122,18 @@ process.stdin.on('keypress', function (ch, key) {
             run = true;
             revealMap("right");
         }
+    } else if (loading) {
+        if (key && key.ctrl && ch == "v") {
+            saveString = cp.paste().toString();
+        }
+        load(ch);
     }
     //stops game.
-    if (key && key.ctrl && ch == 'c') {
+    if (key && key.ctrl && ch == "c") {
         process.stdin.pause();
         run = false;
         battling = false;
     }
 }
 );
+setInterval(() => {}, 1000 * 60 * 60);
