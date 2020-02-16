@@ -4,10 +4,24 @@ const window = require("window-size")
 const keypress = require("keypress")
 const crypto = require("crypto-js")
 const cp = require("copy-paste")
+const compression = require("js-string-compression")
 const func = require("./funcs")
 
+var compressor = new compression.Hauffman();
+
 //Variable declaration
+var gameRunner = null;
+var paused = false;
+var saving = false;
 var loading = false;
+var pauseMenu = [];
+pauseMenu.push(chalk.magentaBright("Game Paused"));
+pauseMenu.push("");
+pauseMenu.push("Save [1]");
+pauseMenu.push("");
+pauseMenu.push("Load [2]");
+pauseMenu.push("");
+pauseMenu.push("Press escape to return to game");
 var savedInformation = [];
 var introStep = 0;
 var playingIntro = true;
@@ -28,6 +42,7 @@ var highestFloor = 1;
 var battleInterface = [];
 var inventoryInterface = [];
 var run = false;
+var gameEnded = false;
 var lastDirection = "";
 var accessingInventory = false;
 var inventory = {
@@ -57,7 +72,12 @@ var saveString = "";
 //array to hold special characters. store the special character, then the desired color at the index after
 var specialChars = ["8", chalk.blueBright, "[", chalk.redBright, "~", chalk.rgb(51, 51, 255), "}", chalk.cyanBright, "X", chalk.grey, "-", chalk.red, "$", chalk.yellowBright]
 
-save = () => {
+/**
+ * Saves and encrypts data
+ * @param key the key that is pressed
+ */
+save = (key) => {
+    saving = true;
     saveString = "";
     saveString += map
     saveString += ":"
@@ -72,12 +92,28 @@ save = () => {
     saveString += inventory
     saveString += ":"
     saveString += health
+    saveString = compressor.compress(saveString);
     saveString = crypto.AES.encrypt(saveString, "SaveString").toString();
     console.clear();
-    console.log(saveString);
+    console.log(chalk.magentaBright("Press c to copy your save"));
+    if (key == "c") {
+        cp.copy(saveString);
+        return new Promise((resolve) => setTimeout(() => {
+            console.clear();
+            console.log(chalk.magentaBright("Successfully copied save - press escape to return to the pause menu"));
+        }, 500));
+    } else if (key == "escape") {
+        saving = false;
+        drawUI();
+    }
 }
 
+/**
+ * Decrypts and loads data
+ * @param key the key that is pressed
+ */
 load = (key) => {
+    loading = true;
     console.clear();
     console.log("Please paste your save: " + saveString);
     if (key == "return") {
@@ -93,9 +129,47 @@ load = (key) => {
             //inventory = savedInformation[5];
             health = parseInt(savedInformation[6]);
             loading = false;
+            paused = false;
             run = true;
             drawUI();
+            console.log(savedInformation[5]);
         }
+    } else if (key == "escape") {
+        loading = false;
+        drawUI();
+    }
+}
+
+/**
+ * Lets the user save or load their game
+ * @param key the key that is pressed
+ */
+saveMenu = (key) => {
+    paused = true;
+
+    if (!saving && !loading) {
+        drawUI();
+        switch (key) {
+            case "1":
+                save(null);
+                break;
+
+            case "2":
+                load(null);
+                break;
+
+            case "escape":
+                paused = false;
+                drawUI();
+                break;
+        
+            default:
+                break;
+        }
+    } else if (saving) {
+        save(key);
+    } else if (loading) {
+        load(key);
     }
 }
 
@@ -125,7 +199,7 @@ drawUI = () =>{
 
         //Creates the map
         console.clear()
-        if (!battling && !accessingInventory && !usingKey) {
+        if (!paused && !battling && !accessingInventory && !usingKey) {
             for(i of map){
                 var string = ""
                 for(o of i){
@@ -138,7 +212,7 @@ drawUI = () =>{
             console.log("Dev coords: " + coords[0] + "," + coords[1])
             console.log(coords[1] + "," + coords[0])
 
-        } else if (battling && !accessingInventory && !usingKey) {
+        } else if (!paused && battling && !accessingInventory && !usingKey) {
             //Creates battle interface
             battleInterface = []
             battleInterface.push(["\n"])
@@ -156,7 +230,7 @@ drawUI = () =>{
                 string = chalk.green(string)
                 console.log(string)
             }
-        } else if (usingKey) {
+        } else if (!paused && usingKey) {
             updateKeyInterface();
             for(i of keyInterface){
                 var string = ""
@@ -165,8 +239,17 @@ drawUI = () =>{
                 }
                 string = chalk.green(string)
                 console.log(string)
+            }
+        } else if (paused && !saving && !loading) {
+            for(i of pauseMenu) {
+                var string = ""
+                for(o of i) {
+                    string += o
+                }
+                string = chalk.green(string)
+                console.log(string)
             } 
-        } else {
+        } else if (accessingInventory) {
             //Creates inventory interface
             updateInventoryInterface()
             for (i of inventoryInterface) {
@@ -677,9 +760,7 @@ revealMap = (direction) => {
         lastDirection = direction;
         switch(direction){
             case "escape":
-                //save();
-                loading = true;
-                load(direction);
+                saveMenu(null);
                 break;
 
             case "up":
@@ -1031,6 +1112,7 @@ playIntro = () =>{
 
                         run = false;
                         playingIntro = false;
+                        clearInterval(gameRunner);
                         console.clear();
                         process.stdin.pause();
 
@@ -1075,7 +1157,16 @@ process.stdin.on('keypress', function (ch, key) {
     if (key != null && key.name != undefined) {
         ch = key.name
     }
-    if (run && !playingIntro && !loading) {
+
+    //stops game.
+    if (key && key.ctrl && ch == "c") {
+        process.stdin.pause();
+        run = false;
+        battling = false;
+        clearInterval(gameRunner);
+    }
+
+    if (run && !playingIntro && !paused) {
         if (!battling && !accessingInventory && !usingKey) {
             revealMap(ch)
             //stops taking input for 1/10th of a second, then re-enables input. This limits input speed and reduces flashing.
@@ -1122,18 +1213,9 @@ process.stdin.on('keypress', function (ch, key) {
             run = true;
             revealMap("right");
         }
-    } else if (loading) {
-        if (key && key.ctrl && ch == "v") {
-            saveString = cp.paste().toString();
-        }
-        load(ch);
-    }
-    //stops game.
-    if (key && key.ctrl && ch == "c") {
-        process.stdin.pause();
-        run = false;
-        battling = false;
+    } else if (paused) {
+        saveMenu(ch);
     }
 }
 );
-setInterval(() => {}, 1000 * 60 * 60);
+gameRunner = setInterval(() => {}, 1000 * 60 * 60);
